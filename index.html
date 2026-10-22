@@ -13139,32 +13139,41 @@ function mkHS(lop, m){ let n = parseInt(bam("MK|" + String(lop).trim().toUpperCa
 const sanSang = id => { const x = bh(id); return x.cao >= D.nguong && !!x.pt; };
 const thieu = id => { const x = bh(id), t = []; if (x.cao < D.nguong) t.push(`đạt từ ${D.nguong}/10 ở Cổng (cao nhất hiện tại ${x.cao}/10)`); if (!x.pt) t.push("lưu Phản tư (bước 4)"); return t; };
 // ───── ĐIỂM TÍCH LUỸ TÀI KHOẢN: cộng dồn mọi hoạt động học tập, luyện tập, thách đấu
-const XP_LOAI = { cong: ["🚪 Luyện tập Cổng", "điểm × 10"], tem: ["🛂 Tem hộ chiếu", "+200"], phantu: ["🪞 Phản tư", "+50 mỗi bài"], on: ["📕 Ôn câu sai làm đúng", "+20"], ai: ["🤖 Hỏi AI và tự đánh giá", "+30, mỗi câu 1 lần/ngày"], td: ["⚔️ Thách đấu", "điểm ÷ 10"], ks: ["📋 Khảo sát", "+20"] };
+// Mức điểm tính cho cả năm (34 bài): em chăm đều ≈ 260 ⭐/bài + thách đấu hằng tuần → chạm 10 000 ⭐ khoảng cuối năm;
+// em rất chăm, làm tối đa mọi mục → khoảng 13 000 ⭐. Muốn chỉnh độ khó chỉ cần sửa bảng XP dưới đây.
+const XP = { congNhan: 4, congLuot: 4, tem: 80, phantu: 30, on: 5, onToiDa: 6, ai: 10, aiToiDa: 4, tdChia: 20, tdTuan: 50, ks: 20 };
+const XP_LOAI = { cong: ["🚪 Luyện tập Cổng", `điểm × ${XP.congNhan} (4 lượt đầu mỗi bài)`], tem: ["🛂 Tem hộ chiếu", `+${XP.tem}`], phantu: ["🪞 Phản tư", `+${XP.phantu} mỗi bài`], on: ["📕 Ôn câu sai làm đúng", `+${XP.on} (tối đa ${XP.onToiDa} câu/bài)`], ai: ["🤖 Hỏi AI và tự đánh giá", `+${XP.ai} (tối đa ${XP.aiToiDa} câu/bài)`], td: ["⚔️ Thách đấu", `điểm ÷ ${XP.tdChia} (tối đa ${XP.tdTuan}/tuần)`], ks: ["📋 Khảo sát", `+${XP.ks}`] };
 const CAP_XP = [[0, "Tân binh số"], [500, "Học viên chăm chỉ"], [1500, "Chiến binh số"], [3000, "Chuyên gia nhí"], [6000, "Bậc thầy Tin học"], [10000, "Huyền thoại Cổng sẵn sàng"]];
 function xpCua(h){
-  if (!h.xp) {   // lần đầu: tính bù từ tiến độ em đã có
-    const x = { tong: 0, n: {}, d: {} }, them = (k, d) => { x.tong += d; x.n[k] = (x.n[k] || 0) + 1; x.d[k] = (x.d[k] || 0) + d; };
-    Object.values(h.bai || {}).forEach(b => { (b.lich || []).forEach(l => them("cong", Math.round(l * 10))); if (b.ngay) them("tem", 200); if (b.pt) them("phantu", 50); if (b.td) them("td", Math.round(b.td / 10)); });
-    ["dau", "cuoi"].forEach(k => { if (h.ks && h.ks[k]) them("ks", 20); });
+  if (!h.xp || h.xp.v !== 2) {   // lần đầu (hoặc bản tính cũ): tính bù từ tiến độ em đã có theo mức điểm mới
+    const x = { v: 2, tong: 0, n: {}, d: {} }, them = (k, d) => { if (!(d > 0)) return; x.tong += d; x.n[k] = (x.n[k] || 0) + 1; x.d[k] = (x.d[k] || 0) + d; };
+    h.xpBai = {};
+    Object.keys(h.bai || {}).forEach(id => { const b = h.bai[id]; (b.lich || []).slice(0, XP.congLuot).forEach(l => them("cong", Math.round(l * XP.congNhan))); h.xpBai[id] = { cong: Math.min(XP.congLuot, (b.lich || []).length) };
+      if (b.ngay) them("tem", XP.tem); if (b.pt) them("phantu", XP.phantu); if (b.td) them("td", Math.min(XP.tdTuan, Math.round(b.td / XP.tdChia))); });
+    ["dau", "cuoi"].forEach(k => { if (h.ks && h.ks[k]) them("ks", XP.ks); });
     h.xp = x;
   }
   return h.xp;
 }
+// đếm số lần được tính điểm của một mục trong một bài (VD: 4 lượt Cổng đầu tiên)
+function demBai(id, loai, toiDa){ const h = hs(); h.xpBai = h.xpBai || {}; const t = h.xpBai[id] = h.xpBai[id] || {}; if ((t[loai] || 0) >= toiDa) return false; t[loai] = (t[loai] || 0) + 1; return true; }
+// thách đấu: tối đa XP.tdTuan ⭐ mỗi tuần (tính từ thứ Hai)
+function congXPTuan(d){ const h = hs(), k = "td|" + dauTuan(); h.xpTuan = h.xpTuan || {}; Object.keys(h.xpTuan).forEach(z => { if (z !== k) delete h.xpTuan[z]; }); const da = h.xpTuan[k] || 0, duoc = Math.max(0, Math.min(d, XP.tdTuan - da)); h.xpTuan[k] = da + duoc; return congXP("td", duoc); }
 function congXP(loai, d){ if (!ma || !(d > 0)) return 0; const x = xpCua(hs()); x.tong += d; x.n[loai] = (x.n[loai] || 0) + 1; x.d[loai] = (x.d[loai] || 0) + d; ghi(); return d; }
 const capXP = t => { const c = CAP_XP.filter(z => t >= z[0]).pop(), k = CAP_XP.find(z => z[0] > t); return { ten: c[1], bac: CAP_XP.indexOf(c) + 1, ke: k, pt: k ? Math.round((t - c[0]) / (k[0] - c[0]) * 100) : 100 }; };
 const cachTinhXP = () => `<details class="cach-xp"><summary><b>📖 Cách kiếm điểm ⭐ — chăm học là lên cấp!</b></summary>
   <table class="bang" style="margin-top:6px"><tr><th>Em làm gì</th><th>Được bao nhiêu ⭐</th><th>Mẹo</th></tr>
-  <tr><td>🚪 Làm Cổng kiểm tra</td><td>điểm × 10 (8/10 → 80)</td><td>Làm lại nhiều lượt, mỗi lượt đều được cộng</td></tr>
-  <tr><td>🛂 Được đóng tem hộ chiếu</td><td>+200</td><td>Qua cổng ${D.nguong}/10 và viết phản tư</td></tr>
-  <tr><td>🪞 Viết phản tư</td><td>+50 mỗi bài</td><td>Viết thật lòng điều học được, điều còn băn khoăn</td></tr>
-  <tr><td>📕 Ôn câu sai làm đúng</td><td>+20 mỗi câu</td><td>Vào Sổ câu sai → Ôn lại</td></tr>
-  <tr><td>🤖 Hỏi AI đúng cách rồi tự đánh giá</td><td>+30 mỗi câu (1 lần/ngày)</td><td>Bấm 🤖 ở màn Xem lại bài làm</td></tr>
-  <tr><td>⚔️ Thách đấu</td><td>điểm thách đấu ÷ 10</td><td>Gói dài, đúng nhanh, đúng liên tiếp = nhiều điểm</td></tr>
-  <tr><td>📋 Khảo sát đầu, cuối</td><td>+20 mỗi lần</td><td>Trả lời thật lòng</td></tr></table>
+  <tr><td>🚪 Làm Cổng kiểm tra</td><td>điểm × ${XP.congNhan} (8/10 → ${8 * XP.congNhan})</td><td>Tính 4 lượt đầu mỗi bài — cố làm tốt ngay từ đầu</td></tr>
+  <tr><td>🛂 Được đóng tem hộ chiếu</td><td>+${XP.tem}</td><td>Qua cổng ${D.nguong}/10 và viết phản tư</td></tr>
+  <tr><td>🪞 Viết phản tư</td><td>+${XP.phantu} mỗi bài</td><td>Viết thật lòng điều học được, điều còn băn khoăn</td></tr>
+  <tr><td>📕 Ôn câu sai làm đúng</td><td>+${XP.on} mỗi câu (tối đa ${XP.onToiDa} câu/bài)</td><td>Vào Sổ câu sai → Ôn lại</td></tr>
+  <tr><td>🤖 Hỏi AI đúng cách rồi tự đánh giá</td><td>+${XP.ai} mỗi câu (tối đa ${XP.aiToiDa} câu/bài)</td><td>Bấm 🤖 ở màn Xem lại bài làm</td></tr>
+  <tr><td>⚔️ Thách đấu</td><td>điểm thách đấu ÷ ${XP.tdChia} (tối đa ${XP.tdTuan}/tuần)</td><td>Đúng nhanh, đúng liên tiếp = nhiều điểm</td></tr>
+  <tr><td>📋 Khảo sát đầu, cuối</td><td>+${XP.ks} mỗi lần</td><td>Trả lời thật lòng</td></tr></table>
   <p class="nho-chu" style="margin:8px 0 2px"><b>Các cấp:</b> ${CAP_XP.map((c, k) => `${k + 1}. ${c[1]} (${c[0].toLocaleString("vi-VN")}⭐)`).join(" → ")}</p>
-  <p class="mo nho-chu" style="margin:0">Điểm cộng dồn cả năm, đổi máy vẫn lấy lại được. Điểm của em hiện trên 🏆 Xếp hạng → ⭐ Tích luỹ (chỉ hiện mã và quân bài).</p></details>`;
+  <p class="mo nho-chu" style="margin:0">Học đều cả 34 bài là chạm mốc 10 000 ⭐ vào cuối năm học. Điểm cộng dồn cả năm, đổi máy vẫn lấy lại được. Điểm của em hiện trên 🏆 Xếp hạng → ⭐ Tích luỹ (chỉ hiện mã và quân bài).</p></details>`;
 const theXP = () => { const t = xpCua(hs()).tong, c = capXP(t); return `<div class="the td" id="theXP"><div class="hang" style="justify-content:space-between"><span><b>⭐ ${t.toLocaleString("vi-VN")}</b> điểm tích luỹ</span><span class="chip cam">Cấp ${c.bac}: ${c.ten}</span></div><div class="vach" style="height:8px;border-radius:9px;background:#fde68a;margin-top:8px;overflow:hidden"><i style="display:block;height:100%;width:${c.pt}%;background:linear-gradient(90deg,#f59e0b,#ea580c)"></i></div><div class="mo nho-chu" style="margin-top:4px">${c.ke ? `Còn <b>${(c.ke[0] - t).toLocaleString("vi-VN")}</b> điểm để lên “${c.ke[1]}”` : "Em đã đạt cấp cao nhất!"} · <a href="#" class="xemXP">xem điểm đến từ đâu</a></div>${cachTinhXP()}</div>`; };
-const ghiNgay = id => { const x = bh(id); if (sanSang(id) && !x.ngay) { x.ngay = Date.now(); congXP("tem", 200); ghi(); bao("🛂 Hộ chiếu vừa được đóng tem Bài " + id + "!"); } };
+const ghiNgay = id => { const x = bh(id); if (sanSang(id) && !x.ngay) { x.ngay = Date.now(); congXP("tem", XP.tem); ghi(); bao("🛂 Hộ chiếu vừa được đóng tem Bài " + id + "!"); } };
 const tienDo = id => { const x = bh(id), b = D.bai.find(b => b.id === id); let d = 0; const n = b.nhiemvu.length; d += Object.keys(x.nv).length / n * 40; if (x.dk) d += 20; if (x.cao >= D.nguong) d += 25; if (x.pt) d += 15; return Math.min(100, Math.round(d)); };
 
 // ───── GỬI KẾT QUẢ VỀ GOOGLE SHEET CỦA CÔ (nếu cô đã đặt link Apps Script)
@@ -13565,10 +13574,10 @@ function cham(b, nd, de){
   de.forEach(z => { const ok = z.chon >= 0 && z.o[z.chon].d; d += ok; if (!ok) { const s = h.sai[z.c.id] = h.sai[z.c.id] || { n: 0 }; s.n++; s.chon = z.chon >= 0 ? z.o[z.chon].t : "(bỏ trống)"; } });
   const diem = Math.round(d / de.length * 10 * 10) / 10;
   x.luot++; if (x.dau == null) x.dau = diem; x.lich.push(diem); if (x.lich.length > 12) x.lich.shift(); const lenMoi = diem > x.cao; x.cao = Math.max(x.cao, diem); ghi(); capNhatDem();
-  const dat = diem >= D.nguong, xpCong = congXP("cong", Math.round(diem * 10)); ghiNgay(b.id);
+  const dat = diem >= D.nguong, xpCong = demBai(b.id, "cong", XP.congLuot) ? congXP("cong", Math.round(diem * XP.congNhan)) : 0; ghiNgay(b.id);
   { const sai = de.filter(z => !(z.chon >= 0 && z.o[z.chon].d)); guiVe("Cổng", [ngayGio(), ma, h.lop, b.id, b.ten, x.luot, diem, x.cao, sai.length, sai.map(z => z.c.q.slice(0, 60)).join(" | ")]); }
   nd.innerHTML = `<div class="the" style="text-align:center"><div class="diem" style="color:${dat ? "var(--xanh)" : "var(--cam)"}">${diem}<span style="font-size:20px">/10</span></div>
-  <p style="font-weight:700">${dat ? "🎉 Em đã qua Cổng! Bước cuối: phản tư để hoàn thành bài." : "Chưa qua cổng — đừng lo, em xem lại các câu sai rồi làm lượt mới nhé."}</p>${lenMoi ? '<span class="chip xanh">Điểm cao nhất mới</span>' : ""}${xpCong ? ` <span class="chip cam">+${xpCong} ⭐ tích luỹ</span>` : ""}
+  <p style="font-weight:700">${dat ? "🎉 Em đã qua Cổng! Bước cuối: phản tư để hoàn thành bài." : "Chưa qua cổng — đừng lo, em xem lại các câu sai rồi làm lượt mới nhé."}</p>${lenMoi ? '<span class="chip xanh">Điểm cao nhất mới</span>' : ""}${xpCong ? ` <span class="chip cam">+${xpCong} ⭐ tích luỹ</span>` : ' <span class="chip">Bài này đã đủ 4 lượt tính ⭐ — luyện tiếp vẫn được ghi điểm Cổng</span>'}
   <div class="hang" style="justify-content:center;margin-top:10px">${dat ? '<button class="nut" id="pt">Sang Phản tư ›</button>' : ""}<button class="nut ${dat ? "phu" : "cam"}" id="lai">Làm lượt mới</button></div></div>
   <div class="the"><b>Xem lại bài làm</b><p class="mo nho-chu">🤖 Câu nào cũng có nút <b>Hỏi AI</b>: câu sai thì AI gợi mở để em tự tìm ra chỗ sai; câu đúng thì AI hỏi thêm để em hiểu sâu hơn. Em thử ít nhất 1 câu nhé!</p>${de.map((z, i) => { const ok = z.chon >= 0 && z.o[z.chon].d, dung = z.o.find(o => o.d).t; return `<div class="${ok ? "ok-hop" : "sai-hop"}"><b>Câu ${i + 1}.</b> ${esc(z.c.q)}${maCode(z.c)}${ok ? "✅ " + esc(dung) : `❌ Em chọn: ${esc(z.chon >= 0 ? z.o[z.chon].t : "(bỏ trống)")}<br>✔️ Đáp án: <b>${esc(dung)}</b>`}<div class="mo nho-chu">💡 ${esc(z.c.gt)}</div><div class="hang" style="margin-top:6px"><button class="nut phu nho" data-aic="${i}">🤖 Hỏi AI ${ok ? "để hiểu sâu hơn" : "đúng cách"}</button></div></div>`; }).join("")}</div>`;
   if ($("#pt")) $("#pt").onclick = () => sangBuoc(b, 3);
@@ -13598,7 +13607,7 @@ function buocPhanTu(b, nd){
     const v = id => $("#" + id).value.trim();
     if (!tt) return bao("Em chọn số sao tự tin nhé");
     if (v("hoc").length < 5 || v("dung").length < 5) return bao("Em viết thêm ở mục 1 và mục 3 nhé");
-    const ptMoi = !x.pt; x.pt = { tt, hoc: v("hoc"), bk: v("bk"), dung: v("dung"), hoi: v("hoi") }; if (ptMoi) congXP("phantu", 50);
+    const ptMoi = !x.pt; x.pt = { tt, hoc: v("hoc"), bk: v("bk"), dung: v("dung"), hoi: v("hoi") }; if (ptMoi) congXP("phantu", XP.phantu);
     if (v("raQ") && v("raD")) { const sai = [0, 1, 2].map(i => v("raS" + i)); if (sai.some(z => !z)) return bao("Câu tự ra cần đủ 3 phương án sai nhé"); x.pt.ra = { q: v("raQ"), d: v("raD"), s: sai }; }
     ghi(); ghiNgay(b.id);
     { const r = x.pt.ra; guiVe("Phản tư", [ngayGio(), ma, hs().lop, b.id, b.ten, x.cao, x.dau == null ? "" : x.dau, sanSang(b.id) ? "Có" : "Chưa", tt, x.pt.hoc, x.pt.bk, x.pt.dung, x.pt.hoi, r ? r.q : "", r ? r.d : "", r ? r.s.join(" | ") : ""]); }
@@ -13634,7 +13643,7 @@ function moHoiAI(b, c, s, quay){
     <div class="lc" id="tdAI">${nut.map(n => `<button data-kq="${n[0]}">${n[1]}</button>`).join("")}</div></div>`;
   window.scrollTo(0, 0); ganLui(quay);
   $("#chep").onclick = () => { saoChep(t); ghiAI(b, c, "Sao chép lời nhắc"); };
-  document.querySelectorAll("#tdAI button").forEach(y => y.onclick = () => { const homNay = new Date().toDateString(); h.aiXP = h.aiXP || {}; if (y.dataset.kq !== "Chưa hỏi AI" && h.aiXP[c.id] !== homNay) { h.aiXP[c.id] = homNay; congXP("ai", 30); } ghiAI(b, c, "Tự đánh giá sau khi hỏi", y.dataset.kq); bao(s ? "Cảm ơn em! Vào Sổ câu sai bấm Ôn lại để thử lại nhé." : "Cảm ơn em!"); quay(); });
+  document.querySelectorAll("#tdAI button").forEach(y => y.onclick = () => { h.aiXP = h.aiXP || {}; if (y.dataset.kq !== "Chưa hỏi AI" && !h.aiXP[c.id] && demBai(b.id, "ai", XP.aiToiDa)) { h.aiXP[c.id] = 1; congXP("ai", XP.ai); } ghiAI(b, c, "Tự đánh giá sau khi hỏi", y.dataset.kq); bao(s ? "Cảm ơn em! Vào Sổ câu sai bấm Ôn lại để thử lại nhé." : "Cảm ơn em!"); quay(); });
 }
 MAN.socau = () => {
   const h = hs(), ids = Object.keys(h.sai);
@@ -13660,7 +13669,7 @@ function onLai(ids, i){
     if (xong) return; xong = true; const z = o[+bt.dataset.j];
     document.querySelectorAll(".lc button").forEach((y, j) => { if (o[j].d) y.classList.add("dung"); });
     if (h.ai && h.ai[c.id]) { ghiAI(b, c, "Ôn lại sau khi hỏi AI", z.d ? "Đúng" : "Sai"); if (z.d) delete h.ai[c.id]; ghi(); }
-    if (!z.d) bt.classList.add("sai"); else { delete h.sai[c.id]; congXP("on", 20); ghi(); }
+    if (!z.d) bt.classList.add("sai"); else { delete h.sai[c.id]; if (demBai(b.id, "on", XP.onToiDa)) congXP("on", XP.on); ghi(); }
     $("#kq").innerHTML = `<div class="${z.d ? "ok-hop" : "sai-hop"}">${z.d ? "✅ Chính xác! Câu này đã được xoá khỏi sổ." : "❌ Chưa đúng — câu này vẫn ở lại trong sổ."}<div class="mo nho-chu">💡 ${esc(c.gt)}</div></div><p></p><button class="nut rong" id="tiep">Câu tiếp ›</button>`;
     $("#tiep").onclick = () => onLai(ids, i + 1);
   });
@@ -13672,7 +13681,7 @@ function saoChep(t){ const xong = () => bao("Đã sao chép ✔"); if (navigator
 const maHoa = o => "CSS1:" + btoa(unescape(encodeURIComponent(JSON.stringify(o))));
 const giaiMa = s => JSON.parse(decodeURIComponent(escape(atob(s.trim().replace(/^CSS1:/, "")))));
 function taoMaBaoCao(){
-  const h = hs(), xp = xpCua(h), o = { v: 1, ma, lop: h.lop, t: Date.now(), b: {}, ks: h.ks, xp: { t: xp.tong, n: xp.n, d: xp.d } };
+  const h = hs(), xp = xpCua(h), o = { v: 1, ma, lop: h.lop, t: Date.now(), b: {}, ks: h.ks, xp: { v: 2, t: xp.tong, n: xp.n, d: xp.d, b: h.xpBai || {} } };
   D.bai.forEach(b => { const x = h.bai[b.id]; if (!x.mo) return; o.b[b.id] = { td: tienDo(b.id), s: x.cao, n: x.luot, r: sanSang(b.id) ? 1 : 0, f: x.dau, w: Object.keys(h.sai).filter(id => id.startsWith("b" + b.id + "c")), pt: x.pt }; });
   return maHoa(o);
 }
@@ -13703,7 +13712,7 @@ MAN.khaosat = (loai) => {
   $("#luuKS").onclick = () => {
     if (a.some(x => !x)) return bao("Em chọn đủ 5 câu nhé");
     if (loai === "cuoi" && !c6) return bao("Em chọn mức cho câu 6 nhé");
-    if (!h.ks[loai]) congXP("ks", 20);
+    if (!h.ks[loai]) congXP("ks", XP.ks);
     h.ks[loai] = { a, t: Date.now() }; if (loai === "cuoi") { h.ks.cuoi.thich = $("#thich").value.trim(); h.ks.cuoi.gopy = $("#gopy").value.trim(); h.ks.cuoi.ai = c6; h.ks.cuoi.aiGiup = $("#aiGiup").value.trim(); }
     ghi(); guiVe("Khảo sát", [ngayGio(), ma, h.lop, loai === "dau" ? "Đầu" : "Cuối", ...a, loai === "cuoi" ? h.ks.cuoi.thich : "", loai === "cuoi" ? h.ks.cuoi.gopy : "", loai === "cuoi" ? c6 : "", loai === "cuoi" ? h.ks.cuoi.aiGiup : ""]);
     bao("Đã lưu, cảm ơn em!"); di(loai === "dau" ? "nha" : "hochieu");
@@ -13716,7 +13725,7 @@ const maVe = (m, id, d) => bam(m + "|" + id + "|" + d + "|" + D.maGV).slice(-5).
 // ───── LẤY LẠI TIẾN ĐỘ TỪ GOOGLE SHEET (máy mới, đổi trình duyệt, lỡ xoá dữ liệu)
 function napTienDo(o){
   const h = hs(); Object.keys(o.ks || {}).forEach(k => { if (!h.ks[k]) h.ks[k] = o.ks[k]; });
-  if (o.xp && (!h.xp || h.xp.tong < o.xp.t)) h.xp = { tong: o.xp.t, n: o.xp.n || {}, d: o.xp.d || {} };
+  if (o.xp && o.xp.v === 2 && (!h.xp || h.xp.v !== 2 || h.xp.tong < o.xp.t)) { h.xp = { v: 2, tong: o.xp.t, n: o.xp.n || {}, d: o.xp.d || {} }; h.xpBai = o.xp.b || {}; }
   Object.keys(o.b || {}).forEach(id => {
     const x = h.bai[id], y = o.b[id], b = D.bai.find(z => String(z.id) === String(id)); if (!x || !b) return;
     x.mo = true; x.cao = Math.max(x.cao, y.s || 0); x.luot = Math.max(x.luot, y.n || 0);
@@ -13766,7 +13775,7 @@ function ganCai(){
 
 // ───── THÁCH ĐẤU TỪNG BÀI (mở khi đã qua cổng) + THÁCH BẠN CÙNG ĐỀ
 // đề thách đấu nghiêng về câu khó: 1 Biết · 3 Hiểu · 3 Vận dụng · 3 Vận dụng cao; câu khó nhiều giờ hơn, nhiều điểm hơn
-const MUC_TD = { NB: { ten: "Biết", giay: 15, diem: 100 }, TH: { ten: "Hiểu", giay: 20, diem: 120 }, VD: { ten: "Vận dụng", giay: 25, diem: 150 }, VDC: { ten: "Vận dụng cao", giay: 35, diem: 200 } };
+const MUC_TD = { NB: { ten: "Biết", giay: 15, diem: 10 }, TH: { ten: "Hiểu", giay: 20, diem: 12 }, VD: { ten: "Vận dụng", giay: 25, diem: 15 }, VDC: { ten: "Vận dụng cao", giay: 35, diem: 20 } };
 const ngauSeed = s => () => { s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 const GOI_TD = { 5: 12, 10: 24, 15: 36 };   // gói phút → số câu (trung bình ~25 giây/câu)
 function deTD(b, seed, n){
@@ -13782,7 +13791,7 @@ function theTD(b){
   const x = bh(b.id);
   if (x.cao < D.nguong) return `<div class="the mo nho-chu">⚔️ <b>Thách đấu Bài ${b.id}</b> mở khi em qua cổng ${D.nguong} điểm.</div>`;
   return `<div class="the td"><b>⚔️ Thách đấu Bài ${b.id}</b><p class="mo nho-chu">${D.soCau} câu nghiêng về câu khó (3 câu Vận dụng cao) · 15–35 giây/câu tuỳ mức · câu khó nhiều điểm hơn, đúng càng nhanh càng nhiều điểm, đúng liên tiếp được thưởng chuỗi. Không ảnh hưởng điểm cổng và tem.</p>
-  <details class="nho-chu"><summary><b>📖 Cách tính điểm thách đấu</b></summary><p style="margin:6px 0">Mỗi câu <b>đúng</b> = điểm theo mức (Biết 100 · Hiểu 120 · Vận dụng 150 · Vận dụng cao 200) + <b>5 điểm cho mỗi giây còn dư</b> + <b>thưởng chuỗi</b> 10 điểm cho mỗi câu đúng liên tiếp trước đó (tối đa 50). Câu sai, hết giờ: 0 điểm, chuỗi về 0. Thời gian mỗi câu: Biết 15 giây · Hiểu 20 · Vận dụng 25 · Vận dụng cao 35. Cả lượt được thêm <b>điểm ÷ 10</b> vào ⭐ tích luỹ.</p></details><p class="mo nho-chu" style="margin:0">${x.td ? ` Kỷ lục của em: <b>${x.td}</b>.` : ""}</p>
+  <details class="nho-chu"><summary><b>📖 Cách tính điểm thách đấu</b></summary><p style="margin:6px 0">Mỗi câu <b>đúng</b> = điểm theo mức (Biết 10 · Hiểu 12 · Vận dụng 15 · Vận dụng cao 20) + <b>1 điểm cho mỗi 5 giây còn dư</b> + <b>thưởng chuỗi</b> 1 điểm cho mỗi câu đúng liên tiếp trước đó (tối đa 5). Câu sai, hết giờ: 0 điểm, chuỗi về 0. Thời gian mỗi câu: Biết 15 giây · Hiểu 20 · Vận dụng 25 · Vận dụng cao 35. Cả lượt được thêm <b>điểm ÷ ${XP.tdChia}</b> vào ⭐ tích luỹ, tối đa <b>${XP.tdTuan} ⭐ mỗi tuần</b> từ thách đấu.</p></details><p class="mo nho-chu" style="margin:0">${x.td ? ` Kỷ lục của em: <b>${x.td}</b>.` : ""}</p>
   <p class="nh" style="margin:8px 0 4px">Chọn gói thử thách:</p><div class="hang" id="tdGoi">${Object.keys(GOI_TD).map(g => `<button class="nut cam" data-goi="${g}">${{ 5: "⚡", 10: "🔥", 15: "🏆" }[g]} ${g} phút · ${GOI_TD[g]} câu</button>`).join("")}</div>
   <div class="hang" style="margin-top:8px"><button class="nut phu" id="tdSan">⚔️ Sàn của lớp</button><button class="nut phu" id="tdXH">🏆 Xếp hạng</button></div></div>`;
 }
@@ -13805,7 +13814,7 @@ function choiTD(b, nd, seed, doi, goi){
       if (xong) return; xong = true; clearInterval(dem);
       const bts = nd.querySelectorAll(".lc button"), ok = j >= 0 && q.o[j].d;
       bts.forEach((y, k) => { if (q.o[k].d) y.classList.add("dung"); });
-      if (ok) { const cong = mu.diem + Math.ceil(con) * 5 + Math.min(50, st.chuoi * 10); st.diem += cong; st.dung++; st.chuoi++; $("#tdKQ").innerHTML = `<div class="ok-hop">✅ +${cong} điểm</div>`; }
+      if (ok) { const cong = mu.diem + Math.floor(Math.max(0, con) / 5) + Math.min(5, st.chuoi); st.diem += cong; st.dung++; st.chuoi++; $("#tdKQ").innerHTML = `<div class="ok-hop">✅ +${cong} điểm</div>`; }
       else { if (j >= 0) bts[j].classList.add("sai"); st.chuoi = 0; const s = h.sai[q.c.id] = h.sai[q.c.id] || { n: 0 }; s.n++; s.chon = j >= 0 ? q.o[j].t : "(hết giờ)"; ghi(); $("#tdKQ").innerHTML = `<div class="sai-hop">${j < 0 ? "⏰ Hết giờ!" : "❌ Chưa đúng"} — câu này vào Sổ câu sai.</div>`; }
       setTimeout(() => { st.i++; st.i < de.length ? cau() : ketTD(); }, ok ? 700 : 1300);
     };
@@ -13814,11 +13823,11 @@ function choiTD(b, nd, seed, doi, goi){
   };
   const ketTD = () => {
     const x = bh(b.id), giay = Math.round((Date.now() - st.t0) / 1000), kyLuc = st.diem > (x.td || 0);
-    x.td = Math.max(x.td || 0, st.diem); ghi(); capNhatDem(); const xpTD = congXP("td", Math.round(st.diem / 10));
+    x.td = Math.max(x.td || 0, st.diem); ghi(); capNhatDem(); const xpTD = congXPTuan(Math.round(st.diem / XP.tdChia));
     guiVe("Thách đấu", [ngayGio(), ma, h.lop, b.id, b.ten, st.diem, st.dung, giay, Date.now(), seed, doi ? doi.ma : "", goi || ""]);
     const ketQua = !doi ? "" : st.diem > doi.diem ? `🏆 Em thắng ${esc(doi.ma)} (${st.diem} – ${doi.diem})!` : st.diem === doi.diem ? `🤝 Hoà ${st.diem} – ${doi.diem}!` : `💪 Thua sát nút ${esc(doi.ma)} (${st.diem} – ${doi.diem}). Ôn sổ câu sai rồi phục thù nhé!`;
     nd.innerHTML = `<div class="the td" style="text-align:center"><div class="mo">⚔️ Thách đấu Bài ${b.id}</div><div class="diem" style="color:var(--cam)">${st.diem}</div>
-    <p style="font-weight:700">${goi ? "Gói " + goi + " phút · " : ""}Đúng ${st.dung}/${de.length} câu · ${giay} giây${xpTD ? ` · <span class="chip cam">+${xpTD} ⭐</span>` : ""}${kyLuc ? ' · <span class="chip xanh">Kỷ lục mới!</span>' : ""}</p>${ketQua ? `<p style="font-weight:800;font-size:18px">${ketQua}</p>` : ""}
+    <p style="font-weight:700">${goi ? "Gói " + goi + " phút · " : ""}Đúng ${st.dung}/${de.length} câu · ${giay} giây${xpTD ? ` · <span class="chip cam">+${xpTD} ⭐</span>` : ` · tuần này đã đủ ${XP.tdTuan} ⭐ thách đấu`}${kyLuc ? ' · <span class="chip xanh">Kỷ lục mới!</span>' : ""}</p>${ketQua ? `<p style="font-weight:800;font-size:18px">${ketQua}</p>` : ""}
     ${D.guiVe && !laThu() && !doi ? '<div class="ok-hop">📣 Lời thách của em đã lên <b>Sàn thách đấu của lớp</b> — các bạn vào sàn là nhận lời được (cần có mạng).</div>' : ""}
     <div class="hang" style="justify-content:center"><button class="nut cam" id="tdLai">Chơi lượt mới</button><button class="nut phu" id="tdSan2">⚔️ Sàn của lớp</button><button class="nut phu" id="tdXH2">🏆 Xếp hạng</button></div></div>`;
     $("#tdLai").onclick = () => choiTD(b, nd, Math.floor(Math.random() * 9000) + 1000, null, goi || 10);
