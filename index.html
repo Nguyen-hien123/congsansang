@@ -13237,7 +13237,7 @@ const MAN = {};
 
 // ───── VÀO HỌC
 MAN.vao = (vai) => {
-  vai = vai || "hs";
+  vai = vai || (fidCo() || /[?&]vai=gv(&|$)/.test(location.search) ? "gv" : "hs");
   app.innerHTML = `<div class="mo-dau"><div class="logo">🚪</div><h1>Cổng sẵn sàng</h1><div class="mo">Tin học 10 · Kết nối tri thức · 34 bài</div></div>
   <div class="vai"><button data-vai="hs" class="${vai === "hs" ? "chon" : ""}"><b>🎒</b>Em là học sinh</button><button data-vai="gv" class="${vai === "gv" ? "chon" : ""}"><b>👩‍🏫</b>Tôi là giáo viên</button></div>
   ${vai === "hs" ? `<div class="the"><label class="nh" for="lop">Lớp</label><input type="text" id="lop" placeholder="VD: 10A3" autocomplete="off" maxlength="8" value="${esc(tatCa._lopCu || "")}">
@@ -13247,7 +13247,7 @@ MAN.vao = (vai) => {
   <p class="mo nho-chu">🔒 Chỉ nhập mã, <b>không nhập họ tên, số điện thoại</b>. Kết quả lưu ngay trên máy của em.</p>
   <button class="nut rong" id="vao">Vào học</button></div>
   <div class="quy"><div><b>📖</b>Đọc sách</div><div><b>👥</b>Học trên lớp</div><div><b>🧊</b>Quan sát 3D</div><div><b>🚪</b>Cổng 7 điểm</div><div><b>🪞</b>Phản tư</div></div>`
-  : `<div class="the"><label class="nh" for="mgv0">Mã giáo viên</label><input type="password" id="mgv0" autocomplete="off"><p></p><button class="nut rong" id="vaoGV">Vào trang giáo viên</button>
+  : `<div class="the">${banPhu() && linkFID() ? `<a class="nut rong cam" style="text-decoration:none;display:block;text-align:center" href="${esc(linkFID())}" target="_blank" rel="noopener">🔐 Vào bằng Face ID / vân tay</a><p class="mo nho-chu" style="text-align:center;margin:8px 0">Mở bản app chính ở tab mới để quét mặt (bản trong Google Sites bị trình duyệt chặn Face ID) · hoặc nhập mã giáo viên</p>` : fidCo() ? '<button class="nut rong cam" id="vaoFID">🔐 Vào bằng Face ID / vân tay</button><p class="mo nho-chu" style="text-align:center;margin:8px 0">hoặc nhập mã giáo viên</p>' : ""}<label class="nh" for="mgv0">Mã giáo viên</label><input type="password" id="mgv0" autocomplete="off"><p></p><button class="nut rong" id="vaoGV">Vào trang giáo viên</button>
   <p class="mo nho-chu">Trang giáo viên: chọn lớp đang dạy, giao việc có hạn, thu bài bằng ảnh QR, theo dõi em nào chưa làm, nhắn nhắc riêng, xuất Excel.</p>
   <p class="mo nho-chu">🧪 Thầy cô được cấp <b>mã dùng thử</b> (dạng THU-XXXX): nhập vào ô trên, máy cần có mạng.</p></div>`}`;
   document.querySelectorAll("[data-vai]").forEach(b => b.onclick = () => MAN.vao(b.dataset.vai));
@@ -13259,15 +13259,16 @@ MAN.vao = (vai) => {
       if (!l) return bao("Em ghi lớp, VD 10A3");
       if (!/^1[0-2][A-Z]{1,2}\d{1,2}$/.test(l)) return bao("Lớp ghi liền, đúng như trên bảng, VD 10A3 hoặc 10D1");
       if (!/^HS\d{1,4}$/.test(m)) return bao("Mã học sinh có dạng HS + số, VD HS07");
-      if (D.matKhau && $("#mkVao").value.trim().toUpperCase().replace(/\s+/g, "") !== mkHS(l, m)) return bao("Lớp, mã hoặc mật khẩu chưa khớp — em xem lại phiếu cô phát");
-      kiemLopHS(l, k => {
-        const moi = !tatCa[m]; ma = m; tatCa._lopCu = l; hs().lop = l; hs().mkOk = 1; if (k.han) { hs().hanThu = k.han; hs().lopThu = k.thu; } ghi();
+      const p = D.matKhau ? $("#mkVao").value.trim().toUpperCase().replace(/\s+/g, "") : "";
+      kiemMK(l, m, p, hb => kiemLopHS(l, k => {
+        const moi = !tatCa[m]; ma = m; tatCa._lopCu = l; hs().lop = l; hs().mkOk = 1; if (hb) hs().mkBam = hb; if (k.han) { hs().hanThu = k.han; hs().lopThu = k.thu; } ghi();
         if (k.thu) bao(`🧪 Lớp dùng thử — em dùng app đến hết ngày ${ngayHan(k.han)}`);
         if (moi && D.guiVe) return timTienDo(ok => { if (!ok) di(hs().ks.dau ? "nha" : "khaosat", "dau"); });
         di(hs().ks.dau ? "nha" : "khaosat", "dau"); layTienDoSheet(false);
-      });
+      }));
     };
   } else {
+    if ($("#vaoFID")) $("#vaoFID").onclick = vaoFaceID;
     $("#vaoGV").onclick = () => { const v = $("#mgv0").value; if (bam(v) !== D.maGV) return /^\s*THU-/i.test(v) ? vaoThuGV(v) : bao("Mã giáo viên chưa đúng"); dangNhapGV(v); di(Object.keys(kho.lop).length ? "gvTheoDoi" : "gvLop"); };
   }
 };
@@ -14226,6 +14227,82 @@ window.addEventListener("online", () => layTB());
 
 // ───── ĐIỀU HƯỚNG CỦA CÔ
 const NAV_GV = [["gvLop", "🏫", "Lớp"], ["gvViec", "📣", "Giao việc"], ["gvThu", "📥", "Thu bài"], ["gvTheoDoi", "👀", "Theo dõi"], ["gv", "📊", "Phân tích"]];
+// ── MẬT KHẨU HỌC SINH theo Google Sheet của cô (trang "Mật khẩu HS"): cô sửa ô Mật khẩu trên Sheet là đổi.
+// Học sinh không tải được mật khẩu về: app chỉ gửi MÃ BĂM của mật khẩu em gõ, Sheet trả lời đúng / sai.
+// Lớp, mã chưa có trên Sheet (hoặc máy mất mạng) thì dùng mật khẩu mặc định của app như trước.
+const bamMK = (l, m, p) => bam("MKHS|" + l + "|" + m + "|" + p);
+const hoiMK = (l, m, hb) => fetch(D.guiVe + (D.guiVe.includes("?") ? "&" : "?") + "mk=1&lop=" + encodeURIComponent(l) + "&ma=" + encodeURIComponent(m) + "&h=" + hb).then(r => r.json());
+function kiemMK(l, m, p, tiep){
+  if (!D.matKhau) return tiep("");
+  const hb = bamMK(l, m, p), luu = (tatCa._mk || {})[l + "|" + m];
+  const sai = () => bao("Lớp, mã hoặc mật khẩu chưa khớp — em xem lại phiếu cô phát");
+  const xong = () => { tatCa._mk = tatCa._mk || {}; tatCa._mk[l + "|" + m] = hb; ghi(); tiep(hb); };
+  const trenMay = () => (luu ? hb === luu : p === mkHS(l, m)) ? xong() : sai();
+  if (!D.guiVe || !navigator.onLine) return trenMay();
+  hoiMK(l, m, hb).then(d => { if (!d || !d.ok) return trenMay(); if (d.co) return d.dung ? xong() : sai(); p === mkHS(l, m) ? xong() : sai(); }).catch(trenMay);
+}
+// mở app có mạng: mật khẩu đã bị cô đổi trên Sheet → máy đang đăng nhập bằng mật khẩu cũ tự thoát
+function kiemMkHS(){
+  if (!ma || laThu() || !D.matKhau || !D.guiVe || !navigator.onLine) return;
+  const m = ma, h = hs(), l = h.lop, macDinh = bamMK(l, m, mkHS(l, m)), hb = h.mkBam || macDinh;
+  hoiMK(l, m, hb).then(d => {
+    if (!d || !d.ok || ma !== m || (d.co ? d.dung : hb === macDinh)) return;
+    ma = null; tatCa._lopCu = l; if (tatCa._mk) delete tatCa._mk[l + "|" + m]; ghi(); di("vao");
+    alert("🔑 Mật khẩu của " + m + " vừa được cô đổi.\nEm đăng nhập lại bằng mật khẩu mới cô đưa trực tiếp. Tiến độ, tem của em vẫn giữ nguyên.");
+  }).catch(() => {});
+}
+// trang cô: mật khẩu đang lưu trên Sheet (chỉ giữ trong bộ nhớ khi trang cô mở)
+let mkSheet = {};
+const mkCua = (lop, m) => (mkSheet[lop] || {})[m] || mkHS(lop, m);
+function guiMK(ds, im){
+  if (!D.guiVe || !laCo || !ds.length) return Promise.resolve(false);
+  if (!navigator.onLine) { if (!im) bao("Máy cần có mạng để gửi mật khẩu lên Google Sheet"); return Promise.resolve(false); }
+  return fetch(D.guiVe, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ khoa: D.guiKhoa, gv: laCo, mk: ds }) })
+    .then(() => { if (!im) bao(`📤 Đã gửi mật khẩu ${ds.length} em lên Google Sheet (em đã có trên Sheet thì giữ nguyên mật khẩu cô đã đổi)`); return true; })
+    .catch(() => { if (!im) bao("Chưa gửi được — cô thử lại khi có mạng"); return false; });
+}
+function layMKLop(lop, veLai){
+  if (!D.guiVe || !laCo || !navigator.onLine) return;
+  fetch(D.guiVe + (D.guiVe.includes("?") ? "&" : "?") + "dsmk=1&gv=" + encodeURIComponent(laCo) + "&lop=" + encodeURIComponent(lop)).then(r => r.json()).then(d => {
+    if (!d.ok) return;
+    const cu = JSON.stringify(mkSheet[lop] || {}), ds = mkSheet[lop] = d.ds || {}, thieu = rosterLop(lop).filter(m => !ds[m]);
+    if (thieu.length) { guiMK(thieu.map(m => [lop, m, mkHS(lop, m)]), true); thieu.forEach(m => ds[m] = mkHS(lop, m)); }
+    if (JSON.stringify(ds) !== cu && veLai) veLai();
+  }).catch(() => {});
+}
+
+// ── ĐĂNG NHẬP CỦA CÔ BẰNG FACE ID / VÂN TAY (khoá sinh trắc học của chính máy — chuẩn WebAuthn).
+// Ảnh khuôn mặt, vân tay không rời điện thoại; app chỉ nhận “đúng chủ máy”. Bật trên máy nào thì máy đó mở trang cô
+// phải quét mặt / vân tay (khoá luôn cả khi người khác cầm máy); máy khác vẫn vào bằng mã giáo viên.
+const KHOA_FID = KHOA_GV + "_fid";
+const fidCo = () => { try { return JSON.parse(localStorage.getItem(KHOA_FID) || "null"); } catch (e) { return null; } };
+const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u))), tuB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const ngauNhien = n => crypto.getRandomValues(new Uint8Array(n));
+// bản trong Google Sites (khung nhúng) hoặc tệp HTML rời: trình duyệt chặn Face ID → mở bản app chính (link GitHub) ở tab mới
+const banPhu = () => { try { return !window.PWA || window.self !== window.top; } catch (e) { return true; } };
+const linkFID = () => D.trangApp ? D.trangApp + (D.trangApp.includes("?") ? "&" : "?") + "vai=gv" : "";
+const loiFID = e => e && e.name === "NotAllowedError" ? "cô đã huỷ hoặc chưa quét xong" : "máy hoặc trình duyệt chưa hỗ trợ — cô mở app bằng link GitHub (bản cài lên màn hình chính), không dùng bản trong Google Sites";
+async function batFaceID(){
+  try {
+    if (!window.PublicKeyCredential || !(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())) throw new Error("khong ho tro");
+    const c = await navigator.credentials.create({ publicKey: { challenge: ngauNhien(32), rp: { name: "Cổng sẵn sàng" },
+      user: { id: ngauNhien(16), name: "giao-vien", displayName: "Giáo viên · Cổng sẵn sàng" },
+      pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" }, timeout: 60000 } });
+    localStorage.setItem(KHOA_FID, JSON.stringify({ id: b64(c.rawId), ma: laCo }));
+    bao("🔐 Đã bật đăng nhập bằng Face ID / vân tay trên máy này"); MAN.gvLop();
+  } catch (e) { bao("Chưa bật được: " + loiFID(e)); }
+}
+async function vaoFaceID(){
+  const f = fidCo(); if (!f) return;
+  try {
+    await navigator.credentials.get({ publicKey: { challenge: ngauNhien(32), allowCredentials: [{ type: "public-key", id: tuB64(f.id) }], userVerification: "required", timeout: 60000 } });
+    if (bam(f.ma) !== D.maGV) { localStorage.removeItem(KHOA_FID); return bao("Mã giáo viên đã đổi — cô vào bằng mã mới rồi bật lại Face ID"); }
+    dangNhapGV(f.ma); di(kho.viec.length ? "gvTheoDoi" : "gvLop");
+  } catch (e) { bao("Chưa nhận diện được: " + loiFID(e) + ". Cô có thể nhập mã giáo viên."); }
+}
+function tatFaceID(){ try { localStorage.removeItem(KHOA_FID); } catch (e) {} bao("Đã tắt đăng nhập bằng Face ID / vân tay trên máy này"); MAN.gvLop(); }
+
 // lớp cô dạy có sẵn trong app (nguon/lien_ket.json → lopCo): máy nào, bản nào (GitHub, Google Sites) mở ra cũng đủ lớp + sĩ số.
 // Cô xoá lớp nào thì app nhớ, không tự thêm lại; cô sửa sĩ số trên máy thì giữ số của cô.
 function themLopCo(){
@@ -14300,7 +14377,7 @@ setInterval(() => { if (hsHetHan()) hetHanHS(); }, 60000);
 
 try {
   const v = localStorage.getItem(KHOA_GV + "_vao"), t = JSON.parse(localStorage.getItem(KHOA_GV + "_thu") || "null");
-  if (v && bam(v) === D.maGV) { laCo = v; themLopCo(); }
+  if (v && bam(v) === D.maGV && !fidCo()) { laCo = v; themLopCo(); }
   else if (v && t && t.ma === v) { laCo = v; gvThu = t; napKho(KHOA_GV + "_" + v); }
 } catch (e) {}
 
@@ -14316,7 +14393,9 @@ MAN.gvLop = () => {
     <p class="mo nho-chu">${x.day ? "✅ Lớp đang dạy" : "Không hiện trong giao việc"} · đã có kết quả của ${nop} em</p>
     ${D.matKhau ? `<button class="nut nho" data-mk="${esc(l)}" style="margin:4px 0 6px">🔑 Mật khẩu học sinh</button>` : ""}
     <details><summary class="nho-chu"><b>Xem quân bài của cả lớp</b></summary><div class="luoi-bai">${rosterLop(l).map(m => `<div class="o-bai">${veBai(m)}<small>${m}</small></div>`).join("")}</div></details></div>`; }).join("") : '<div class="the mo">Chưa có lớp nào. Cô thêm lớp ở trên nhé.</div>'}
-  <div class="the"><b>Dữ liệu của cô</b><p class="mo nho-chu">Kết quả lưu trên máy này. Nên sao lưu sau mỗi tuần.</p><div class="hang"><button class="nut phu nho" id="saoLuu">💾 Sao lưu</button><label class="nut phu nho" style="cursor:pointer">📂 Khôi phục<input type="file" id="khoiPhuc" accept=".json" class="an"></label><button class="nut phu nho" id="dangXuat">🚪 Đăng xuất</button></div></div>`;
+  <div class="the"><b>Dữ liệu của cô</b><p class="mo nho-chu">Kết quả lưu trên máy này. Nên sao lưu sau mỗi tuần.</p><div class="hang"><button class="nut phu nho" id="saoLuu">💾 Sao lưu</button><label class="nut phu nho" style="cursor:pointer">📂 Khôi phục<input type="file" id="khoiPhuc" accept=".json" class="an"></label><button class="nut phu nho" id="dangXuat">🚪 Đăng xuất</button></div></div>
+  ${D.matKhau && D.guiVe ? `<div class="the"><b>🔑 Mật khẩu học sinh trên Google Sheet</b><p class="mo nho-chu">Gửi mật khẩu các lớp lên trang “Mật khẩu HS” của Google Sheet. Em nào cần đổi mật khẩu: gặp cô trực tiếp, cô sửa ô Mật khẩu trên Sheet → máy đang đăng nhập bằng mật khẩu cũ tự thoát khi có mạng. Học sinh không xem, không tải được mật khẩu từ Sheet.</p><button class="nut nho" id="guiMKHet">📤 Gửi mật khẩu tất cả lớp lên Google Sheet</button></div>` : ""}
+  ${gvThu ? "" : `<div class="the"><b>🔐 Đăng nhập bằng Face ID / vân tay</b>${banPhu() && linkFID() ? `<p class="mo nho-chu">Bản đang mở nằm trong Google Sites nên trình duyệt chặn Face ID. Cô bấm nút để mở bản app chính (link GitHub) ở tab mới, đăng nhập rồi bật Face ID ở đó. Từ đây về sau, ở Google Sites cô chỉ cần bấm “Vào bằng Face ID” là mở thẳng bản app chính.</p><a class="nut nho" style="text-decoration:none;display:inline-block" href="${esc(linkFID())}" target="_blank" rel="noopener">🔐 Mở bản app chính để bật Face ID</a>` : fidCo() ? `<p class="mo nho-chu">✅ Đang bật trên máy này: mở trang cô phải quét mặt / vân tay. Máy khác vẫn vào bằng mã giáo viên.</p><button class="nut phu nho" id="tatFID">Tắt trên máy này</button>` : `<p class="mo nho-chu">Bật trên điện thoại / máy tính riêng của cô: lần sau vào trang cô chỉ cần quét mặt (Face ID) hoặc vân tay, không gõ mã; người khác cầm máy cũng không vào được. Dùng bản app cài từ link GitHub.</p><button class="nut nho" id="batFID">🔐 Bật trên máy này</button>`}</div>`}`;
   $("#vaoThu").onclick = () => vaoThu($("#thuLop").value);
   document.querySelectorAll("[data-mk]").forEach(c => c.onclick = () => di("gvMatKhau", c.dataset.mk));
   $("#themLop").onclick = () => { const l = $("#tLop").value.trim().toUpperCase(), n = +$("#tSiSo").value; if (!l) return bao("Cô nhập tên lớp");
@@ -14327,6 +14406,13 @@ MAN.gvLop = () => {
   $("#saoLuu").onclick = () => taiTep("Cong-san-sang-du-lieu-co-" + new Date().toISOString().slice(0, 10) + ".json", new Blob([JSON.stringify(kho)], { type: "application/json" }));
   $("#khoiPhuc").onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { const d = JSON.parse(t); if (!d.kq) throw 0; kho = Object.assign({ lop: {}, viec: [], kq: {} }, d); ghiKho(); bao("Đã khôi phục"); MAN.gvLop(); }).catch(() => bao("Tệp sao lưu không đúng")); };
   $("#dangXuat").onclick = dangXuatGV;
+  if ($("#batFID")) $("#batFID").onclick = batFaceID;
+  if ($("#tatFID")) $("#tatFID").onclick = tatFaceID;
+  if ($("#guiMKHet")) $("#guiMKHet").onclick = () => {
+    const ds = Object.keys(kho.lop).filter(l => !gvThu || gvThu.lop.includes(l)).flatMap(l => rosterLop(l).map(m => [l, m, mkCua(l, m)]));
+    if (!ds.length) return bao("Cô nhập sĩ số các lớp trước");
+    guiMK(ds);
+  };
 };
 
 // ── GIAO VIỆC
@@ -14447,14 +14533,15 @@ MAN.gvTheoDoi = (idViec) => {
 // ───── MẬT KHẨU RIÊNG TỪNG HỌC SINH: bảng cho cô + phiếu cắt phát cho các em (không có họ tên — cô tự ghi tên khi phát)
 MAN.gvMatKhau = (lop) => {
   const ds = rosterLop(lop);
+  layMKLop(lop, () => { if ($(".phieu-mk")) MAN.gvMatKhau(lop); });
   app.innerHTML = dau("🔑 Mật khẩu học sinh · " + esc(lop), "Mỗi em một mật khẩu 4 kí tự, gắn với đúng lớp và mã", 1) + `
-  <div class="the khong-in"><p class="mo nho-chu">Học sinh đăng nhập phải gõ đúng <b>Lớp + Mã + Mật khẩu</b>. Gõ sai lớp hoặc số thứ tự thì mật khẩu không khớp nên không vào được — tránh dữ liệu sai lớp, sai mã. Mật khẩu cố định theo mã giáo viên: in lại lúc nào cũng ra đúng bộ cũ.</p>
+  <div class="the khong-in"><p class="mo nho-chu">Học sinh đăng nhập phải gõ đúng <b>Lớp + Mã + Mật khẩu</b>. Gõ sai lớp hoặc số thứ tự thì mật khẩu không khớp nên không vào được — tránh dữ liệu sai lớp, sai mã. ${D.guiVe ? `${mkSheet[lop] ? "🟢 Mật khẩu đang theo Google Sheet (trang “Mật khẩu HS”)" : "Đang đọc mật khẩu trên Google Sheet…"}. Em cần đổi mật khẩu: cô sửa ô trên Sheet rồi mở lại trang này để in phiếu mới.` : "Mật khẩu cố định theo mã giáo viên: in lại lúc nào cũng ra đúng bộ cũ."}</p>
   <div class="hang"><button class="nut" id="mkIn">🖨️ In phiếu cắt</button><button class="nut phu" id="mkXls">📥 Tải Excel (có cột Họ tên để cô tự điền)</button></div>
   ${ds.length ? "" : '<p class="sai-hop">Lớp chưa có sĩ số — cô nhập sĩ số ở mục 🏫 Lớp trước.</p>'}</div>
-  <div class="phieu-mk">${ds.map(m => { const q = quanBai(m) || {}; return `<div class="o-mk">${veBai(m)}<div><div class="nho-chu">Cổng sẵn sàng · Tin 10 · Họ tên: ………………</div><b>Lớp ${esc(lop)} · ${m}</b><div>Mật khẩu: <b class="mk">${mkHS(lop, m)}</b></div></div></div>`; }).join("")}</div>`;
+  <div class="phieu-mk">${ds.map(m => { const q = quanBai(m) || {}; return `<div class="o-mk">${veBai(m)}<div><div class="nho-chu">Cổng sẵn sàng · Tin 10 · Họ tên: ………………</div><b>Lớp ${esc(lop)} · ${m}</b><div>Mật khẩu: <b class="mk">${esc(mkCua(lop, m))}</b></div></div></div>`; }).join("")}</div>`;
   ganLui(() => di("gvLop"));
   $("#mkIn").onclick = () => window.print();
-  $("#mkXls").onclick = () => taiTep(`Mat-khau-${lop}.xlsx`, taoXlsx([{ ten: "Mật khẩu " + lop, dong: [["STT", "Lớp", "Mã HS", "Quân bài", "Mật khẩu", "Họ và tên (cô tự điền, không đưa lên mạng)"], ...ds.map((m, i) => [i + 1, lop, m, (quanBai(m) || {}).ten || "", mkHS(lop, m), ""])] }]));
+  $("#mkXls").onclick = () => taiTep(`Mat-khau-${lop}.xlsx`, taoXlsx([{ ten: "Mật khẩu " + lop, dong: [["STT", "Lớp", "Mã HS", "Quân bài", "Mật khẩu", "Họ và tên (cô tự điền, không đưa lên mạng)"], ...ds.map((m, i) => [i + 1, lop, m, (quanBai(m) || {}).ten || "", mkCua(lop, m), ""])] }]));
 };
 
 // ───── XUẤT EXCEL (.xlsx thật, nhiều trang tính, không cần mạng)
@@ -14548,7 +14635,7 @@ function hienNopQR(idBai, hop){
 dayDi();
 if (ma && D.matKhau && !laThu() && !hs().mkOk) { tatCa._lopCu = hs().lop; ma = null; ghi(); }
 di(ma ? "nha" : laCo ? (kho.viec.length ? "gvTheoDoi" : "gvLop") : "vao");
-kiemThu(); kiemHanHS(); layTienDoSheet(false); window.addEventListener("online", () => { kiemThu(); kiemHanHS(); });
+kiemThu(); kiemHanHS(); kiemMkHS(); layTienDoSheet(false); window.addEventListener("online", () => { kiemThu(); kiemHanHS(); kiemMkHS(); });
 })();
 </script>
 </body>
