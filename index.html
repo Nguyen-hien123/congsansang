@@ -14063,7 +14063,7 @@ function xepHang(lop, gv, tieu, ky){
     $("#dsXH").innerHTML = top.map(dong).join("") + (!gv && toi && !top.includes(toi) ? '<p class="mo" style="text-align:center">⋯</p>' + dong(toi) : "") + (!gv && !toi ? `<div class="the mo nho-chu">Em chưa có tên trên bảng ${ky === "thang" ? "tháng" : "tuần"} này — vào ⚔️ Thách đấu ở một bài đã qua cổng nhé.</div>` : "") + (tieu === "xp" ? `<p class="mo nho-chu">${ds.length} bạn có điểm tích luỹ. Điểm cộng dồn suốt năm học, không làm mới.</p>` : `<p class="mo nho-chu">${ds.length} bạn đã thách đấu ${ky === "thang" ? "tháng" : "tuần"} này. Bảng ${ky === "thang" ? "làm mới ngày 1 hằng tháng" : "làm mới mỗi thứ Hai"}.</p>`);
   }).catch(() => { $("#dsXH").innerHTML = '<div class="the">Chưa tải được (máy cần có mạng). Em thử lại sau nhé.</div>'; });
 }
-MAN.xephang = () => { app.innerHTML = dau("🏆 Bảng xếp hạng", esc(ma) + " · " + esc(hs().lop)) + '<div class="hang" style="margin-bottom:10px"><button class="nut cam" id="moSan">⚔️ Sàn thách đấu của lớp</button></div><div id="xhVung"></div>'; $("#moSan").onclick = () => di("san"); xepHang(hs().lop, false); };
+MAN.xephang = () => { app.innerHTML = dau("🏆 Bảng xếp hạng", esc(ma) + " · " + esc(hs().lop)) + '<div class="hang" style="margin-bottom:10px"><button class="nut cam" id="moSan">⚔️ Sàn thách đấu của lớp</button><button class="nut" id="moCN">🏅 Giấy chứng nhận của em</button></div><div id="xhVung"></div>'; $("#moSan").onclick = () => di("san"); $("#moCN").onclick = () => di("giayCN"); xepHang(hs().lop, false); };
 
 // ───── SÀN THÁCH ĐẤU CỦA LỚP: thách đấu xong là lời thách tự lên sàn; nhiều bạn cùng nhận lời một lời thách (cần mạng)
 const truocDay = t => { const p = Math.round((Date.now() - t) / 60000); return p < 1 ? "vừa xong" : p < 60 ? p + " phút trước" : p < 1440 ? Math.round(p / 60) + " giờ trước" : Math.round(p / 1440) + " ngày trước"; };
@@ -14441,12 +14441,18 @@ function veSoTru(){
 }
 
 // ───── VINH DANH THÁNG: tổng hợp từ Google Sheet theo nhóm đối tượng cô tích chọn → nhất, nhì, ba → in giấy chứng nhận
+// danh: danh hiệu trên giấy · pc: phẩm chất được ghi nhận (gắn 4T) · hv: hoa văn chìm thiết bị số · bh: biểu tượng chính · nhat: nền nhạt
 const NHOM_VD = {
-  xp: { ten: "⭐ Tích luỹ", don: "⭐", mau: "#d97706", loi: "chăm học đều đặn, tích luỹ nhiều điểm nhất lớp (điểm cộng dồn từ đầu năm)", td: "san" },
-  san: { ten: "⚔️ Lên sàn", don: "lời thách", mau: "#2563eb", loi: "dũng cảm đưa nhiều lời thách lên Sàn thách đấu — hòa hợp với chính mình", td: "san" },
-  nhan: { ten: "🤝 Nhận thách đấu", don: "lần nhận lời", mau: "#0d9488", loi: "nhiệt tình nhận lời thách của bạn — hòa hợp cùng bạn bè, vui học", td: "ban" },
-  tienbo: { ten: "🌱 Tiến bộ", don: "điểm tiến bộ", mau: "#16a34a", loi: "tiến bộ vượt bậc: điểm cao nhất tăng nhiều nhất so với lượt đầu ở một bài", td: "san" },
-  tran: { ten: "🔥 Chăm chỉ", don: "lượt thách đấu", mau: "#e11d48", loi: "chăm chỉ luyện tập, thách đấu nhiều lượt nhất", td: "san" }
+  xp: { ten: "⭐ Tích luỹ", don: "⭐", mau: "#d97706", nhat: "#fef3c7", loi: "chăm học đều đặn, tích luỹ nhiều điểm nhất lớp (điểm cộng dồn từ đầu năm)", td: "san",
+    danh: "NGÔI SAO TÍCH LUỸ", pc: ["Chăm chỉ", "Kiên trì", "Tự chủ học bài"], hh: "Hòa hợp với bản thân", bh: "sao", hv: ["sao", "sach", "laptop", "dongho", "pin", "usb"] },
+  san: { ten: "⚔️ Lên sàn", don: "lời thách", mau: "#2563eb", nhat: "#dbeafe", loi: "dũng cảm đưa nhiều lời thách lên Sàn thách đấu — hòa hợp với chính mình", td: "san",
+    danh: "CHIẾN BINH DŨNG CẢM", pc: ["Dũng cảm", "Tự tin", "Dám thử thách"], hh: "Hòa hợp với bản thân", bh: "set", hv: ["set", "cup", "tayGame", "troChuot", "manHinh", "ma"] },
+  nhan: { ten: "🤝 Nhận thách đấu", don: "lần nhận lời", mau: "#0d9488", nhat: "#ccfbf1", loi: "nhiệt tình nhận lời thách của bạn — hòa hợp cùng bạn bè, vui học", td: "ban",
+    danh: "NGƯỜI BẠN ĐỒNG HÀNH", pc: ["Hợp tác", "Thân thiện", "Tôn trọng bạn"], hh: "Hòa hợp với bạn bè", bh: "mang", hv: ["mang", "tinNhan", "wifi", "dienThoai", "tim", "may"] },
+  tienbo: { ten: "🌱 Tiến bộ", don: "điểm tiến bộ", mau: "#16a34a", nhat: "#dcfce7", loi: "tiến bộ vượt bậc: điểm cao nhất tăng nhiều nhất so với lượt đầu ở một bài", td: "san",
+    danh: "MẦM XANH TIẾN BỘ", pc: ["Nỗ lực", "Vượt khó", "Tự sửa lỗi"], hh: "Hòa hợp với bản thân", bh: "mam", hv: ["mam", "bieuDo", "banhRang", "chip", "ma", "sao"] },
+  tran: { ten: "🔥 Chăm chỉ", don: "lượt thách đấu", mau: "#e11d48", nhat: "#ffe4e6", loi: "chăm chỉ luyện tập, thách đấu nhiều lượt nhất", td: "san",
+    danh: "NGỌN LỬA CHUYÊN CẦN", pc: ["Chuyên cần", "Bền bỉ", "Tự quản bản thân"], hh: "Hòa hợp với bản thân", bh: "lua", hv: ["banPhim", "chip", "chuot", "dongho", "lua", "pin"] }
 };
 const GIAI = ["", "NHẤT", "NHÌ", "BA"], HC = ["", "🥇", "🥈", "🥉"];
 const thangVN = () => { const d = new Date(Date.now() + 7 * 36e5); return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0"); };
@@ -14494,44 +14500,200 @@ function ganVinhDanh(lop){
     }).catch(e => { $("#vdKQ").innerHTML = `<div class="sai-hop">Chưa tổng hợp được: ${esc(e.message)}. Cô kiểm tra mạng rồi thử lại.</div>`; });
   };
 }
-// giấy chứng nhận A4 ngang, mỗi em một trang — mở cửa sổ in
+// ───── GIẤY CHỨNG NHẬN A5 ngang (210 × 148 mm) — vẽ bằng canvas: cô in, học sinh lưu ảnh về điện thoại
+// 1 px = 0,1 mm → ảnh 2100 × 1480. Mỗi nhóm một danh hiệu, phẩm chất và hoa văn chìm thiết bị số riêng.
+const CN_W = 2100, CN_H = 1480;
+const CN_SERIF = '"Times New Roman", "Noto Serif", Georgia, serif', CN_SANS = '"Segoe UI", Roboto, "Noto Sans", Arial, sans-serif';
+// hoa văn: mỗi hình vẽ nét trong khung −50…50 (tâm 0,0)
+const HV = {
+  laptop(c){ c.strokeRect(-36, -32, 72, 46); c.beginPath(); c.moveTo(-48, 22); c.lineTo(48, 22); c.lineTo(40, 32); c.lineTo(-40, 32); c.closePath(); c.stroke(); },
+  manHinh(c){ c.strokeRect(-42, -36, 84, 54); c.beginPath(); c.moveTo(0, 18); c.lineTo(0, 32); c.moveTo(-20, 34); c.lineTo(20, 34); c.stroke(); c.font = "bold 26px monospace"; c.textAlign = "center"; c.fillText(">_", 0, -2); },
+  dienThoai(c){ cnBo(c, -22, -44, 44, 88, 9); c.stroke(); c.beginPath(); c.arc(0, 32, 4, 0, 7); c.stroke(); c.beginPath(); c.moveTo(-8, -36); c.lineTo(8, -36); c.stroke(); },
+  chip(c){ c.strokeRect(-26, -26, 52, 52); c.strokeRect(-12, -12, 24, 24); c.beginPath(); for (let i = -18; i <= 18; i += 12) { c.moveTo(i, -26); c.lineTo(i, -40); c.moveTo(i, 26); c.lineTo(i, 40); c.moveTo(-26, i); c.lineTo(-40, i); c.moveTo(26, i); c.lineTo(40, i); } c.stroke(); },
+  banPhim(c){ cnBo(c, -48, -24, 96, 48, 6); c.stroke(); for (let r = 0; r < 3; r++) for (let k = 0; k < 7; k++) if (!(r === 2 && k > 0 && k < 6)) c.strokeRect(-41 + k * 12, -17 + r * 12, 8, 8); c.strokeRect(-29, 7, 56, 8); },
+  chuot(c){ cnBo(c, -22, -36, 44, 72, 22); c.stroke(); c.beginPath(); c.moveTo(0, -36); c.lineTo(0, -8); c.moveTo(-22, -8); c.lineTo(22, -8); c.stroke(); },
+  wifi(c){ c.beginPath(); for (const r of [14, 28, 42]) { c.moveTo(-r * .77, 16 - r * .64); c.arc(0, 16, r, -2.27, -.87); } c.stroke(); c.beginPath(); c.arc(0, 16, 5, 0, 7); c.fill(); },
+  may(c){ c.beginPath(); c.moveTo(-30, 22); c.arc(-26, 4, 18, 1.8, 4.4); c.arc(2, -10, 24, 3.5, 6.0); c.arc(30, 6, 16, 4.6, 1.6); c.closePath(); c.stroke(); c.beginPath(); c.moveTo(0, 30); c.lineTo(0, 44); c.moveTo(-14, 30); c.lineTo(-14, 40); c.moveTo(14, 30); c.lineTo(14, 40); c.stroke(); },
+  ma(c){ c.beginPath(); c.moveTo(-18, -24); c.lineTo(-42, 0); c.lineTo(-18, 24); c.moveTo(18, -24); c.lineTo(42, 0); c.lineTo(18, 24); c.moveTo(8, -32); c.lineTo(-8, 32); c.stroke(); },
+  banhRang(c){ c.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; c.moveTo(Math.cos(a) * 26, Math.sin(a) * 26); c.lineTo(Math.cos(a) * 40, Math.sin(a) * 40); } c.stroke(); c.beginPath(); c.arc(0, 0, 28, 0, 7); c.stroke(); c.beginPath(); c.arc(0, 0, 11, 0, 7); c.stroke(); },
+  mang(c){ const p = [[0, -34], [-36, 22], [36, 22], [0, 4]]; c.beginPath(); [[0, 1], [0, 2], [1, 2], [3, 0], [3, 1], [3, 2]].forEach(([a, b]) => { c.moveTo(...p[a]); c.lineTo(...p[b]); }); c.stroke(); p.forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 9, 0, 7); c.fill(); }); },
+  bieuDo(c){ c.beginPath(); c.moveTo(-42, -40); c.lineTo(-42, 38); c.lineTo(44, 38); c.stroke(); [[-30, 14], [-12, 0], [6, -14], [24, -28]].forEach(([x, h]) => c.strokeRect(x, h, 12, 38 - h)); c.beginPath(); c.moveTo(-34, 4); c.lineTo(-4, -16); c.lineTo(14, -6); c.lineTo(40, -38); c.moveTo(28, -38); c.lineTo(40, -38); c.lineTo(40, -26); c.stroke(); },
+  mam(c){ c.beginPath(); c.moveTo(0, 40); c.lineTo(0, -6); c.moveTo(0, 6); c.quadraticCurveTo(-34, 4, -36, -30); c.quadraticCurveTo(-6, -26, 0, 6); c.moveTo(0, -6); c.quadraticCurveTo(30, -10, 32, -42); c.quadraticCurveTo(4, -38, 0, -6); c.moveTo(0, 40); c.lineTo(-24, 40); c.lineTo(-24, 48); c.moveTo(0, 40); c.lineTo(24, 40); c.lineTo(24, 48); c.stroke(); [[-24, 48], [24, 48]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 4, 0, 7); c.fill(); }); },
+  sao(c){ c.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 18 : 44, a = -Math.PI / 2 + i * Math.PI / 5; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); c.stroke(); },
+  sach(c){ c.beginPath(); c.moveTo(0, -26); c.quadraticCurveTo(-22, -36, -44, -28); c.lineTo(-44, 30); c.quadraticCurveTo(-22, 22, 0, 32); c.quadraticCurveTo(22, 22, 44, 30); c.lineTo(44, -28); c.quadraticCurveTo(22, -36, 0, -26); c.lineTo(0, 32); c.stroke(); },
+  dongho(c){ c.beginPath(); c.arc(0, 0, 38, 0, 7); c.stroke(); c.beginPath(); c.moveTo(0, -24); c.lineTo(0, 0); c.lineTo(18, 10); c.stroke(); },
+  pin(c){ cnBo(c, -40, -20, 76, 40, 6); c.stroke(); c.fillRect(38, -9, 8, 18); for (let i = 0; i < 4; i++) c.fillRect(-33 + i * 17, -13, 12, 26); },
+  usb(c){ cnBo(c, -14, -6, 28, 46, 5); c.stroke(); c.strokeRect(-9, -30, 18, 24); c.fillRect(-5, -24, 3, 6); c.fillRect(2, -24, 3, 6); },
+  set(c){ c.beginPath(); c.moveTo(8, -46); c.lineTo(-24, 6); c.lineTo(-2, 6); c.lineTo(-10, 46); c.lineTo(24, -8); c.lineTo(2, -8); c.closePath(); c.stroke(); },
+  cup(c){ c.beginPath(); c.moveTo(-26, -38); c.lineTo(26, -38); c.lineTo(22, -4); c.quadraticCurveTo(0, 16, -22, -4); c.closePath(); c.moveTo(-26, -30); c.quadraticCurveTo(-46, -26, -24, -6); c.moveTo(26, -30); c.quadraticCurveTo(46, -26, 24, -6); c.moveTo(0, 10); c.lineTo(0, 26); c.moveTo(-18, 36); c.lineTo(18, 36); c.lineTo(14, 26); c.lineTo(-14, 26); c.closePath(); c.stroke(); },
+  tayGame(c){ cnBo(c, -46, -22, 92, 46, 22); c.stroke(); c.beginPath(); c.moveTo(-30, 0); c.lineTo(-14, 0); c.moveTo(-22, -8); c.lineTo(-22, 8); c.stroke(); [[18, -6], [28, 4]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 5, 0, 7); c.fill(); }); },
+  troChuot(c){ c.beginPath(); c.moveTo(-20, -40); c.lineTo(-20, 26); c.lineTo(-4, 12); c.lineTo(8, 38); c.lineTo(18, 33); c.lineTo(6, 8); c.lineTo(26, 6); c.closePath(); c.stroke(); },
+  tinNhan(c){ cnBo(c, -44, -32, 88, 52, 14); c.stroke(); c.beginPath(); c.moveTo(-18, 20); c.lineTo(-28, 40); c.lineTo(0, 20); c.stroke(); [-18, 0, 18].forEach(x => { c.beginPath(); c.arc(x, -6, 5, 0, 7); c.fill(); }); },
+  tim(c){ c.beginPath(); c.moveTo(0, 36); c.bezierCurveTo(-56, 0, -30, -46, 0, -18); c.bezierCurveTo(30, -46, 56, 0, 0, 36); c.stroke(); },
+  lua(c){ c.beginPath(); c.moveTo(0, 42); c.bezierCurveTo(-40, 38, -36, -4, -12, -22); c.bezierCurveTo(-14, -6, -4, 0, 0, -6); c.bezierCurveTo(2, -26, 6, -36, 0, -46); c.bezierCurveTo(32, -30, 40, 8, 26, 26); c.bezierCurveTo(20, 36, 10, 42, 0, 42); c.stroke(); c.beginPath(); c.moveTo(0, 36); c.bezierCurveTo(-16, 32, -14, 14, -2, 4); c.bezierCurveTo(4, 14, 18, 18, 0, 36); c.stroke(); }
+};
+function cnBo(c, x, y, w, h, r){ c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+function cnHinh(c, ten, x, y, s, mau, net){ c.save(); c.translate(x, y); c.scale(s, s); c.strokeStyle = c.fillStyle = mau; c.lineWidth = net / s; c.lineCap = c.lineJoin = "round"; (HV[ten] || HV.sao)(c); c.restore(); }
+// chữ: tự thu nhỏ cho vừa bề rộng; xuống dòng theo từ
+function cnChu(c, s, x, y, co, kieu, mau, rong, canh){ c.font = kieu.replace("#", co); while (co > 12 && rong && c.measureText(s).width > rong) { co -= 2; c.font = kieu.replace("#", co); } c.fillStyle = mau; c.textAlign = canh || "center"; c.fillText(s, x, y); return co; }
+function cnDong(c, s, x, y, rong, cao){ const tu = s.split(" "); let d = "", n = 0; tu.forEach(t => { const thu = d ? d + " " + t : t; if (c.measureText(thu).width > rong && d) { c.fillText(d, x, y + n++ * cao); d = t; } else d = thu; }); if (d) c.fillText(d, x, y + n++ * cao); return n; }
+// huy chương 1 – 2 – 3
+function cnHuy(c, x, y, hang, mau){
+  const MAU_HC = { 1: ["#fff7cc", "#f5c518", "#a16207"], 2: ["#ffffff", "#cbd5e1", "#64748b"], 3: ["#ffedd5", "#d97706", "#7c2d12"] }[hang] || ["#fff", "#e2e8f0", "#64748b"];
+  c.save();
+  [[-1, mau], [1, "#b91c1c"]].forEach(([p, m]) => { c.fillStyle = m; c.beginPath(); c.moveTo(x + p * 20, y - 200); c.lineTo(x + p * 95, y - 200); c.lineTo(x + p * 55, y - 60); c.lineTo(x + p * 5, y - 60); c.closePath(); c.fill(); });
+  const g = c.createRadialGradient(x - 40, y - 40, 10, x, y, 150); g.addColorStop(0, MAU_HC[0]); g.addColorStop(.55, MAU_HC[1]); g.addColorStop(1, MAU_HC[2]);
+  c.shadowColor = "rgba(0,0,0,.25)"; c.shadowBlur = 24; c.shadowOffsetY = 8;
+  c.fillStyle = g; c.beginPath(); c.arc(x, y, 135, 0, 7); c.fill(); c.shadowColor = "transparent";
+  c.strokeStyle = MAU_HC[2]; c.lineWidth = 6; c.beginPath(); c.arc(x, y, 112, 0, 7); c.stroke();
+  c.setLineDash([2, 14]); c.lineWidth = 8; c.beginPath(); c.arc(x, y, 124, 0, 7); c.stroke(); c.setLineDash([]);
+  c.fillStyle = MAU_HC[2]; c.font = `bold 130px ${CN_SERIF}`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(String(hang), x, y + 8); c.textBaseline = "alphabetic";
+  c.restore();
+}
+// con dấu tròn "Lớp học hòa hợp 4T"
+function cnDau(c, x, y, mau){
+  c.save(); c.translate(x, y); c.rotate(-.18); c.strokeStyle = c.fillStyle = mau; c.globalAlpha = .85;
+  c.lineWidth = 7; c.beginPath(); c.arc(0, 0, 118, 0, 7); c.stroke(); c.lineWidth = 3; c.beginPath(); c.arc(0, 0, 86, 0, 7); c.stroke();
+  const vong = "LỚP HỌC HÒA HỢP · CỔNG SẴN SÀNG · ";
+  c.font = `bold 23px ${CN_SANS}`; c.textAlign = "center"; c.textBaseline = "middle";
+  [...vong].forEach((k, i) => { c.save(); c.rotate(i * 2 * Math.PI / vong.length); c.fillText(k, 0, -101); c.restore(); });
+  c.font = `900 64px ${CN_SANS}`; c.fillText("4T", 0, -8); c.font = `bold 20px ${CN_SANS}`; c.fillText("TIN HỌC 10", 0, 38);
+  c.restore();
+}
+// o: { ma, hang, gt } · k: nhóm · kq: { th, lop } · tc: { truong, gv, ngay, td, hs (true = bản học sinh lưu ảnh), tamTinh }
+function veGiayCN(o, k, kq, tc){
+  const g = NHOM_VD[k], m = g.mau, cv = document.createElement("canvas"); cv.width = CN_W; cv.height = CN_H;
+  const c = cv.getContext("2d"), qb = quanBai(o.ma);
+  // nền giấy kem + quầng màu nhóm
+  let n = c.createLinearGradient(0, 0, CN_W, CN_H); n.addColorStop(0, "#fffdf7"); n.addColorStop(1, "#fff8e8"); c.fillStyle = n; c.fillRect(0, 0, CN_W, CN_H);
+  n = c.createRadialGradient(CN_W / 2, 560, 100, CN_W / 2, 560, 1100); n.addColorStop(0, "rgba(255,255,255,.9)"); n.addColorStop(1, g.nhat); c.fillStyle = n; c.fillRect(0, 0, CN_W, CN_H);
+  // hoa văn chìm: thiết bị số xoay nghiêng, lặp kín giấy
+  c.save(); cnBo(c, 78, 78, CN_W - 156, CN_H - 156, 30); c.clip(); c.globalAlpha = .085;
+  c.translate(CN_W / 2, CN_H / 2); c.rotate(-.21);
+  for (let hang = -7, d = 0; hang <= 7; hang++) for (let cot = -9; cot <= 9; cot++, d++) cnHinh(c, g.hv[(d + hang * 2 + 60) % g.hv.length], cot * 150 + (hang % 2 ? 75 : 0), hang * 140, 1, m, 4);
+  c.restore();
+  // dải nhị phân mờ trên, dưới
+  c.save(); c.globalAlpha = .13; c.fillStyle = m; c.font = `bold 22px Consolas, "Courier New", monospace`; c.textAlign = "center";
+  const nhiPhan = Array.from({ length: 30 }, (_, i) => ((o.ma.charCodeAt(i % o.ma.length) + i * 7) % 256).toString(2).padStart(8, "0")).join(" ");
+  c.fillText(nhiPhan.slice(0, 150), CN_W / 2, 122); c.fillText(nhiPhan.slice(60, 210), CN_W / 2, CN_H - 104); c.restore();
+  // khung: viền màu nhóm + chỉ vàng + đường mạch điện ở bốn góc
+  c.lineWidth = 22; c.strokeStyle = m; cnBo(c, 34, 34, CN_W - 68, CN_H - 68, 40); c.stroke();
+  c.lineWidth = 5; c.strokeStyle = "#d4a017"; cnBo(c, 62, 62, CN_W - 124, CN_H - 124, 30); c.stroke();
+  c.lineWidth = 2; cnBo(c, 74, 74, CN_W - 148, CN_H - 148, 26); c.stroke();
+  [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sy]) => {
+    const x0 = sx > 0 ? 74 : CN_W - 74, y0 = sy > 0 ? 74 : CN_H - 74;
+    c.save(); c.translate(x0, y0); c.scale(sx, sy); c.strokeStyle = c.fillStyle = "#d4a017"; c.lineWidth = 4;
+    c.beginPath(); c.moveTo(40, 0); c.lineTo(40, 40); c.lineTo(120, 40); c.lineTo(150, 70); c.lineTo(230, 70); c.moveTo(0, 40); c.lineTo(40, 80); c.lineTo(40, 150); c.lineTo(70, 180); c.lineTo(70, 230); c.moveTo(80, 0); c.lineTo(80, 20); c.lineTo(170, 20); c.stroke();
+    [[230, 70], [70, 230], [170, 20]].forEach(([x, y]) => { c.beginPath(); c.arc(x, y, 9, 0, 7); c.fill(); });
+    c.beginPath(); c.arc(40, 40, 15, 0, 7); c.fill(); c.restore();
+  });
+  // đầu giấy
+  c.textBaseline = "alphabetic";
+  cnChu(c, (tc.truong || "TRƯỜNG ……………………………………").toUpperCase(), CN_W / 2, 200, 40, `bold #px ${CN_SERIF}`, "#0f172a", 1250);
+  cnChu(c, "Môn Tin học 10 · App “Cổng sẵn sàng” · Lớp học hòa hợp 4T", CN_W / 2, 248, 30, `italic #px ${CN_SERIF}`, "#475569", 1250);
+  // huy chương trái · biểu tượng nhóm phải
+  cnHuy(c, 360, 520, o.hang, m);
+  cnChu(c, "GIẢI " + GIAI[o.hang], 360, 720, 46, `900 #px ${CN_SANS}`, m);
+  c.save(); c.shadowColor = "rgba(0,0,0,.22)"; c.shadowBlur = 22; c.shadowOffsetY = 8; c.fillStyle = m; c.beginPath(); c.arc(1740, 500, 140, 0, 7); c.fill(); c.restore();
+  c.strokeStyle = "#fff"; c.lineWidth = 6; c.beginPath(); c.arc(1740, 500, 120, 0, 7); c.stroke();
+  cnHinh(c, g.bh, 1740, 500, 1.85, "#fff", 9);
+  cnChu(c, g.hh, 1740, 690, 32, `bold #px ${CN_SANS}`, m, 330);
+  // tiêu đề, danh hiệu
+  c.save(); c.shadowColor = "#fcd34d"; c.shadowOffsetY = 5;
+  cnChu(c, "GIẤY CHỨNG NHẬN", CN_W / 2, 400, 112, `900 #px ${CN_SERIF}`, "#b91c1c", 1000); c.restore();
+  cnChu(c, "★  " + g.danh + "  ★", CN_W / 2, 490, 62, `900 #px ${CN_SANS}`, m, 1000);
+  cnChu(c, `${tenThang(kq.th).toUpperCase()} · LỚP ${kq.lop}`, CN_W / 2, 552, 34, `bold #px ${CN_SANS}`, "#334155", 900);
+  // người nhận
+  cnChu(c, "Trân trọng chứng nhận học sinh", CN_W / 2, 630, 38, `italic #px ${CN_SERIF}`, "#334155");
+  if (tc.hs) {
+    c.font = `900 92px ${CN_SERIF}`; const t1 = o.ma + (qb ? "  ·  " : ""), w1 = c.measureText(t1).width, w2 = qb ? c.measureText(qb.ten).width : 0;
+    cnChu(c, t1, CN_W / 2 - (w1 + w2) / 2, 730, 92, `900 #px ${CN_SERIF}`, "#0f172a", 0, "left");
+    if (qb) cnChu(c, qb.ten, CN_W / 2 - (w1 + w2) / 2 + w1, 730, 92, `900 #px ${CN_SERIF}`, qb.mau, 0, "left");
+  } else {
+    c.strokeStyle = "#94a3b8"; c.lineWidth = 3; c.setLineDash([3, 12]); c.beginPath(); c.moveTo(600, 712); c.lineTo(1500, 712); c.stroke(); c.setLineDash([]);
+    cnChu(c, `Mã ${o.ma}${qb ? " · quân bài " + qb.ten : ""}`, CN_W / 2, 760, 30, `#px ${CN_SANS}`, "#64748b");
+  }
+  // dải giải + nhóm
+  c.font = `900 40px ${CN_SANS}`; const nhan = `ĐẠT GIẢI ${GIAI[o.hang]} · NHÓM ${g.ten.replace(/^\S+\s/, "").toUpperCase()}`, rp = c.measureText(nhan).width + 110;
+  c.fillStyle = m; cnBo(c, CN_W / 2 - rp / 2, 800, rp, 76, 38); c.fill(); cnChu(c, nhan, CN_W / 2, 853, 40, `900 #px ${CN_SANS}`, "#fff");
+  // phẩm chất
+  c.font = `bold 34px ${CN_SANS}`; const w = g.pc.map(p => c.measureText(p).width + 90), tong = w.reduce((a, b) => a + b, 0) + 30 * (w.length - 1) + 230;
+  let x = CN_W / 2 - tong / 2; cnChu(c, "Phẩm chất:", x, 958, 34, `italic bold #px ${CN_SERIF}`, "#334155", 0, "left"); x += 230;
+  g.pc.forEach((p, i) => { c.fillStyle = g.nhat; cnBo(c, x, 912, w[i], 64, 32); c.fill(); c.strokeStyle = m; c.lineWidth = 3; c.stroke(); cnHinh(c, "sao", x + 36, 944, .36, m, 3); c.fillStyle = m; c.textAlign = "left"; c.fillText(p, x + 66, 957); x += w[i] + 30; });
+  // lí do + thông điệp
+  c.font = `41px ${CN_SERIF}`; c.fillStyle = "#1e293b"; c.textAlign = "center";
+  const dLy = cnDong(c, `Vì đã ${g.loi} (${o.gt} ${g.don}${tc.tamTinh ? ", tính đến " + tc.tamTinh : ""}).`, CN_W / 2, 1052, 1300, 52);
+  if (tc.td) { c.font = `italic 35px ${CN_SERIF}`; c.fillStyle = "#7c2d12"; cnDong(c, `“${tc.td.noi}” — ${tc.td.tg.replace(/ /g, " ")}`, CN_W / 2, 1052 + dLy * 52 + 20, 940, 44); }
+  // con dấu trái · chữ kí phải
+  cnDau(c, 330, 1215, m);
+  c.textAlign = "center"; c.fillStyle = "#1e293b";
+  cnChu(c, `Ngày ${tc.ngay.getUTCDate()} tháng ${tc.ngay.getUTCMonth() + 1} năm ${tc.ngay.getUTCFullYear()}`, 1765, 1190, 30, `italic #px ${CN_SERIF}`, "#334155");
+  if (tc.hs) {
+    cnChu(c, "BẢNG XẾP HẠNG CỦA LỚP", 1765, 1236, 32, `bold #px ${CN_SERIF}`, "#0f172a");
+    cnChu(c, "App “Cổng sẵn sàng” xác nhận", 1765, 1290, 28, `italic #px ${CN_SERIF}`, m);
+    cnChu(c, "Giấy chứng nhận điện tử · app tự cấp theo bảng xếp hạng của lớp", CN_W / 2, 1372, 24, `italic #px ${CN_SANS}`, "#94a3b8");
+  } else {
+    cnChu(c, "GIÁO VIÊN BỘ MÔN", 1765, 1236, 32, `bold #px ${CN_SERIF}`, "#0f172a");
+    if (tc.gv) cnChu(c, tc.gv, 1765, 1366, 36, `bold #px ${CN_SERIF}`, "#0f172a", 420);
+  }
+  return cv;
+}
+const cnTD = (k, o, i) => { const tds = (D.tdTD || {})[NHOM_VD[k].td] || []; return tds.length ? tds[(parseInt(o.ma.slice(2)) + i + k.length) % tds.length] : null; };
+const cnTen = (o, k, kq) => `Giay chung nhan ${o.ma} ${kq.lop} ${kq.th} ${k}.png`;
+// lưu ảnh: điện thoại mở bảng chia sẻ (Lưu ảnh / Zalo…); máy tính tải tệp PNG
+function luuAnhCN(cv, ten){
+  cv.toBlob(b => {
+    const f = typeof File === "function" ? new File([b], ten, { type: "image/png" }) : null;
+    if (f && navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f], title: "Giấy chứng nhận" }).catch(() => {});
+    else { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = ten; document.body.appendChild(a); a.click(); a.remove(); bao("Đã tải ảnh giấy chứng nhận"); }
+  }, "image/png");
+}
+// cô in: mỗi em một trang A5 ngang; trên màn hình mỗi giấy có nút tải ảnh
 function inChungNhan(kq, nhom){
-  const truong = truongVD(), gv = kho.vdGV || "", nay = new Date(Date.now() + 7 * 36e5);
-  const giay = [];
-  nhom.forEach(k => { const g = NHOM_VD[k], tds = (D.tdTD || {})[g.td] || []; kq.nhom[k].forEach((o, i) => {
-    const t = tds.length ? tds[(parseInt(o.ma.slice(2)) + i + k.length) % tds.length] : null, qb = quanBai(o.ma);
-    giay.push(`<section class="cn" style="--m:${g.mau}"><div class="vien"><div class="goc g1">✦</div><div class="goc g2">✦</div><div class="goc g3">✦</div><div class="goc g4">✦</div>
-      <div class="dau-cn">${esc(truong || "Trường ………………………………………")}<br><span>Môn Tin học 10 · App “Cổng sẵn sàng”</span></div>
-      <div class="huy">${HC[o.hang]}</div>
-      <h1>GIẤY CHỨNG NHẬN VINH DANH</h1>
-      <div class="thang">${tenThang(kq.th).toUpperCase()} · LỚP ${esc(kq.lop)}</div>
-      <p class="cnh">Chứng nhận học sinh</p>
-      <div class="ten">……………………………………………………</div>
-      <div class="mahs">Mã ${esc(o.ma)}${qb ? " · quân bài " + esc(qb.ten) : ""}</div>
-      <div class="giai" style="background:${g.mau}">ĐẠT GIẢI ${GIAI[o.hang]} · NHÓM ${g.ten.toUpperCase()}</div>
-      <p class="ly">Vì đã ${g.loi} với <b>${o.gt} ${g.don}</b>.</p>
-      ${t ? `<p class="td">“${esc(t.noi)}” — ${esc(t.tg)}</p>` : ""}
-      <div class="ky"><div>Ngày ${nay.getUTCDate()} tháng ${nay.getUTCMonth() + 1} năm ${nay.getUTCFullYear()}<br><b>GIÁO VIÊN BỘ MÔN</b><br><br><br>${esc(gv)}</div></div></div></section>`);
-  }); });
+  const tc = { truong: truongVD(), gv: kho.vdGV || "", ngay: new Date(Date.now() + 7 * 36e5) }, giay = [];
+  nhom.forEach(k => kq.nhom[k].forEach((o, i) => { const cv = veGiayCN(o, k, kq, Object.assign({ td: cnTD(k, o, i) }, tc)); giay.push({ src: cv.toDataURL("image/jpeg", .93), ten: cnTen(o, k, kq).replace(".png", ".jpg") }); }));
   if (!giay.length) return bao("Không có giấy nào để in");
   const html = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><title>Giấy chứng nhận vinh danh ${esc(tenThang(kq.th))} · ${esc(kq.lop)}</title><style>
-@page{size:A4 landscape;margin:0}*{box-sizing:border-box}body{margin:0;font-family:"Times New Roman",serif;color:#1e293b;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.cn{width:297mm;height:210mm;padding:9mm;page-break-after:always;background:radial-gradient(circle at 50% 40%,#fff 55%,#fef9c3 100%)}
-.vien{position:relative;height:100%;border:3mm double var(--m);outline:1.2mm solid #d4a017;outline-offset:-6mm;border-radius:6mm;text-align:center;padding:11mm 20mm 9mm;display:flex;flex-direction:column;align-items:center}
-.goc{position:absolute;font-size:12mm;color:#d4a017}.g1{top:2mm;left:4mm}.g2{top:2mm;right:4mm}.g3{bottom:2mm;left:4mm}.g4{bottom:2mm;right:4mm}
-.dau-cn{font-weight:700;font-size:5mm;text-transform:uppercase;letter-spacing:.3mm}.dau-cn span{font-weight:400;text-transform:none;font-size:4mm;font-style:italic}
-.huy{font-size:18mm;line-height:1;margin-top:2mm}h1{margin:1mm 0 0;font-size:11mm;letter-spacing:.5mm;white-space:nowrap;color:#b91c1c;text-shadow:0 .5mm 0 #fde68a}
-.thang{font-weight:700;letter-spacing:1mm;color:var(--m);font-size:5.5mm;margin-top:1mm}.cnh{margin:5mm 0 0;font-style:italic;font-size:5.5mm}
-.ten{font-size:8mm;margin-top:3mm;color:#94a3b8}.mahs{font-size:4.2mm;color:#64748b;margin-top:1mm}
-.giai{display:inline-block;color:#fff;font-weight:800;font-size:6mm;padding:2mm 8mm;border-radius:20mm;margin-top:4mm;letter-spacing:.4mm}
-.ly{font-size:5.2mm;margin:4mm 10mm 0}.td{font-style:italic;font-size:4.4mm;color:#7c2d12;margin:3mm 18mm 0}
-.ky{margin-top:auto;align-self:flex-end;margin-right:8mm;font-size:4.6mm;text-align:center}
-@media screen{body{background:#cbd5e1}.cn{margin:8mm auto;box-shadow:0 2mm 8mm #0003}}
-</style></head><body>${giay.join("")}<script>setTimeout(function(){window.print()},400)<\/script></body></html>`;
+@page{size:A5 landscape;margin:0}*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif}
+.cn{width:210mm;height:148mm;page-break-after:always;break-after:page;position:relative}.cn img{width:100%;height:100%;display:block}
+.tai{display:none}
+@media screen{body{background:#cbd5e1;padding:10px}.cn{margin:8mm auto;box-shadow:0 2mm 8mm #0003}.tai{display:block;position:absolute;right:10px;bottom:-34px;font-size:14px;font-weight:700;color:#0f172a}.dau{position:sticky;top:0;background:#0f172a;color:#fff;padding:10px 14px;border-radius:10px;text-align:center;z-index:2}.dau button{font:inherit;font-weight:700;margin-left:10px;padding:6px 14px;border-radius:8px;border:0;cursor:pointer}}
+@media print{.dau{display:none}}
+</style></head><body><div class="dau">${giay.length} giấy chứng nhận · khổ A5 ngang (in: chọn khổ giấy A5, hướng ngang, lề không)<button onclick="print()">🖨️ In</button></div>${giay.map(x => `<section class="cn"><img src="${x.src}" alt="Giấy chứng nhận"><a class="tai" download="${esc(x.ten)}" href="${x.src}">⬇️ Tải ảnh này</a></section>`).join("")}<script>setTimeout(function(){window.print()},600)<\/script></body></html>`;
   const w = window.open("", "_blank");
   if (w) { w.document.open(); w.document.write(html); w.document.close(); }
   else { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([html], { type: "text/html" })); a.download = `Giay chung nhan vinh danh ${kq.th} ${kq.lop}.html`; a.click(); bao("Máy chặn cửa sổ mới — app đã tải tệp giấy chứng nhận, cô mở tệp để in"); }
 }
+// học sinh: xem và lưu giấy chứng nhận của chính mình (theo bảng xếp hạng tháng của lớp)
+MAN.giayCN = (thChon) => {
+  const h = hs(), nay = thangVN(), cacThang = Array.from({ length: 4 }, (_, i) => { const [y, mm] = nay.split("-").map(Number), d = new Date(Date.UTC(y, mm - 1 - i, 1)); return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0"); });
+  const th = thChon || cacThang[0];
+  app.innerHTML = dau("🏅 Giấy chứng nhận của em", esc(ma) + " · " + esc(h.lop), 1) + `<div class="the"><p class="mo nho-chu">Em lọt top 3 của lớp ở nhóm nào thì có giấy chứng nhận của nhóm đó. Bấm <b>📲 Lưu về điện thoại</b> để cất vào thư viện ảnh. Giấy chỉ ghi mã và quân bài của em, không có họ tên.</p>
+    <div class="hang"><span class="nho-chu">Tháng</span><select id="cnThang" style="width:auto">${cacThang.map(t => `<option value="${t}" ${t === th ? "selected" : ""}>${tenThang(t)}${t === nay ? " (đang diễn ra)" : ""}</option>`).join("")}</select></div></div><div id="cnVung"><div class="the">📡 Đang xem bảng xếp hạng của lớp…</div></div>`;
+  ganLui(() => di("xephang"));
+  $("#cnThang").onchange = e => MAN.giayCN(e.target.value);
+  const v = $("#cnVung");
+  if (!D.guiVe) { v.innerHTML = '<div class="the">Giấy chứng nhận cần link Google Sheet của cô.</div>'; return; }
+  if (!navigator.onLine) { v.innerHTML = '<div class="the">📴 Máy đang mất mạng. Em bật mạng rồi mở lại nhé.</div>'; return; }
+  fetch(D.guiVe + (D.guiVe.includes("?") ? "&" : "?") + "xh=1&lop=" + encodeURIComponent(h.lop) + "&ky=thang&th=" + th + thuQ()).then(r => r.json()).then(d => {
+    if (!$("#cnVung")) return;
+    if (!d || !d.ok) throw new Error();
+    if (d.th !== th && th !== nay) { v.innerHTML = '<div class="the">App của cô chưa xem được các tháng trước. Em chọn tháng đang diễn ra nhé.</div>'; return; }
+    const ds = d.ds || [], kq = { th, lop: h.lop }, co = [];
+    Object.keys(NHOM_VD).forEach(k => {
+      if ((k === "san" || k === "nhan") && d.th !== th) return;
+      const xep = ds.filter(o => (o[k] || 0) > 0).sort((a, b) => b[k] - a[k] || b.diem - a.diem);
+      let hang = 0, truoc = null; xep.forEach((o, i) => { if (o[k] !== truoc) { hang = i + 1; truoc = o[k]; } o["h_" + k] = hang; });
+      const toi = xep.find(o => o.ma === ma);
+      if (toi && toi["h_" + k] <= 3) co.push({ k, o: { ma, hang: toi["h_" + k], gt: toi[k] } });
+    });
+    if (!co.length) { v.innerHTML = `<div class="the">🌱 ${tenThang(th)} em chưa vào top 3 nhóm nào. Mỗi lượt luyện, mỗi lời thách đều được tính — cố lên, giấy chứng nhận đang chờ em!</div>`; return; }
+    const ngay = new Date(Date.now() + 7 * 36e5), tamTinh = th === nay ? ngay.getUTCDate() + "/" + (ngay.getUTCMonth() + 1) : "";
+    v.innerHTML = (tamTinh ? `<div class="sai-hop nho-chu">Tháng đang diễn ra: hạng tính đến hôm nay, cuối tháng có thể còn thay đổi. Cô trao giấy chính thức trên lớp.</div>` : "") + co.map((x, i) => `<div class="the"><b>${NHOM_VD[x.k].ten} · Giải ${GIAI[x.o.hang].toLowerCase()}</b><div id="cnAnh${i}" style="margin:8px 0"></div><button class="nut cam rong" data-luu="${i}">📲 Lưu về điện thoại</button></div>`).join("");
+    const cvs = co.map((x, i) => { const cv = veGiayCN(x.o, x.k, kq, { truong: D.truong || "", gv: "", ngay, td: cnTD(x.k, x.o, 0), hs: true, tamTinh }), im = new Image(); im.src = cv.toDataURL("image/jpeg", .85); im.alt = "Giấy chứng nhận"; im.style.cssText = "width:100%;border-radius:10px;box-shadow:0 2px 10px #0002"; $("#cnAnh" + i).appendChild(im); return cv; });
+    v.querySelectorAll("[data-luu]").forEach(b => b.onclick = () => { const x = co[+b.dataset.luu]; luuAnhCN(cvs[+b.dataset.luu], cnTen(x.o, x.k, kq)); });
+  }).catch(() => { const v = $("#cnVung"); if (v) v.innerHTML = '<div class="the">Chưa tải được (mạng chập chờn). Em thử lại sau nhé.</div>'; });
+};
 
 // ───── TRANG CỦA CÔ
 let laCo = false;
