@@ -169,6 +169,7 @@ select{max-width:100%}
 @media print{.vq-khung{display:none}}
 header.dau{flex-wrap:wrap}.dd-hang{flex-basis:100%;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px}.dd-hang select{width:auto;max-width:62%;background:#fff;color:#0f172a;border:2px solid #fde047;font-weight:800;padding:4px 8px;border-radius:10px;font-size:14px}.dd-nhan{background:#fde047;color:#7c2d12;font-weight:900;border-radius:8px;padding:3px 8px;font-size:13px}
 .lop-dang{border:2px solid #f59e0b!important;box-shadow:0 0 0 3px #fde68a66}
+.tg-nut{margin-left:auto;border:1px solid var(--vien);background:#f8fafc;border-radius:8px;padding:4px 10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:inherit}.tg-dau{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.tg-duoi{display:flex;justify-content:flex-end;margin-top:8px}.the.tg-gon>.tg-than{display:none}.the.tg-co{scroll-margin-top:130px}.cuoi-the{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:14px 0 8px}
 .th-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin-top:10px}.th-o{display:flex;flex-direction:column;gap:3px;align-items:center;text-align:center;border:3px solid var(--vien);border-radius:10px;padding:6px;background:#fff;font:inherit;color:inherit;cursor:pointer;min-height:78px;justify-content:center}.th-o img{width:100%;height:72px;object-fit:cover;border-radius:6px}div.th-o{cursor:default}
 .tk-luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:8px}.tk-o{border:1px solid var(--vien);border-top:5px solid var(--m);border-radius:12px;padding:8px 10px;background:#fff}.tk-so{font-size:30px;font-weight:900;color:var(--m);line-height:1.1}.tk-ten{font-weight:800}
 .nut.do{background:var(--do);color:#fff}.nut-tru{border:0;border-radius:8px;background:#fee2e2;color:#991b1b;font-weight:800;font-size:12px;padding:2px 7px;cursor:pointer}
@@ -14053,7 +14054,7 @@ function xepHang(lop, gv, tieu, ky){
   tieu = tieu || "diem"; ky = ky || tatCa._kyXH || "tuan"; tatCa._kyXH = ky;
   const tu = ky === "thang" ? dauThang() : dauTuan(), dTu = new Date(tu + 7 * 36e5);
   const tenKy = ky === "thang" ? `tháng ${dTu.getUTCMonth() + 1}/${dTu.getUTCFullYear()}` : `tuần ${ngayTuan(tu)} – ${ngayTuan(tu + 6 * 864e5)}`;
-  const khung = noiDung => (gv ? '<div class="xh-lon">' : "<div>") + `<div class="tab-xh"><button data-ky="tuan" class="${ky === "tuan" ? "dang" : ""}">📅 Tuần này</button><button data-ky="thang" class="${ky === "thang" ? "dang" : ""}">🗓️ Tháng này</button></div><div class="tab-xh">${Object.keys(TIEU_XH).map(k => `<button data-xh="${k}" class="${k === tieu ? "dang" : ""}">${TIEU_XH[k][0]}</button>`).join("")}</div><p class="mo nho-chu">${TIEU_XH[tieu][1]} · lớp <b>${esc(lop)}</b> · ${tieu === "xp" ? "từ trước đến nay" : tenKy}. Bảng chỉ hiện mã và quân bài, không có họ tên.</p><div id="dsXH">${noiDung}</div></div>`;
+  const khung = noiDung => (gv ? `<div class="the"><b>🏆 Bảng xếp hạng · lớp ${esc(lop)}</b><div class="xh-lon">` : "<div>") + `<div class="tab-xh"><button data-ky="tuan" class="${ky === "tuan" ? "dang" : ""}">📅 Tuần này</button><button data-ky="thang" class="${ky === "thang" ? "dang" : ""}">🗓️ Tháng này</button></div><div class="tab-xh">${Object.keys(TIEU_XH).map(k => `<button data-xh="${k}" class="${k === tieu ? "dang" : ""}">${TIEU_XH[k][0]}</button>`).join("")}</div><p class="mo nho-chu">${TIEU_XH[tieu][1]} · lớp <b>${esc(lop)}</b> · ${tieu === "xp" ? "từ trước đến nay" : tenKy}. Bảng chỉ hiện mã và quân bài, không có họ tên.</p><div id="dsXH">${noiDung}</div></div>` + (gv ? "</div>" : "");
   const vung = $("#xhVung"); vung.innerHTML = khung('<div class="the">Đang tải bảng xếp hạng…</div>');
   const gan = () => { document.querySelectorAll("[data-xh]").forEach(y => y.onclick = () => xepHang(lop, gv, y.dataset.xh, ky)); document.querySelectorAll("[data-ky]").forEach(y => y.onclick = () => xepHang(lop, gv, tieu, y.dataset.ky)); };
   gan();
@@ -14759,15 +14760,27 @@ function veThangHS(){
     const giao = new Set(d.giao.map(g => g.bai)), yc = new Set(d.giao.filter(g => g.th).map(g => g.bai));
     kho.viec.filter(z => z.lop.includes(lop) && z.tao && new Date(z.tao + 7 * 36e5).toISOString().slice(0, 7) === th).forEach(z => { giao.add(z.bai); if (z.th) yc.add(z.bai); });
     const ro = [...new Set([...rosterLop(lop), ...Object.keys(d.hs)])], tuoc = new Set(d.tuoc), khoa = laQL();
-    const baiCo = m => Object.keys(d.hs[m] || {}).map(Number).sort((a, b) => a - b), o = (m, b) => (d.hs[m] || {})[b] || {};
+    const baiCo = m => Object.keys(d.hs[m] || {}).map(Number), o = (m, b) => (d.hs[m] || {})[b] || {}, truB = d.truBai || {}, loiB = (m, b) => Math.max(0, (truB[m] || {})[b] || 0);
+    const cot = [...new Set([...giao, ...yc, ...ro.flatMap(m => baiCo(m).filter(b => o(m, b).db || o(m, b).san || o(m, b).nhan)), ...ro.flatMap(m => Object.keys(truB[m] || {}).map(Number).filter(b => b && loiB(m, b)))])].sort((a, b) => a - b);
+    const coDinh = (trai, ben) => `position:sticky;left:${trai}px;z-index:1;background:${ben}`;
+    const oBai = (m, b) => {
+      const x = o(m, b), n = [], ss = x.cao >= D.nguong && x.pt;
+      if (giao.has(b)) n.push(ss ? "✅" : "⬜");
+      if (yc.has(b)) n.push(x.th ? "🖼️" : "🚫");
+      if (x.db) n.push("🌸");
+      if (x.san) n.push("⚔️" + x.san);
+      if (x.nhan) n.push("🤝" + x.nhan);
+      if (loiB(m, b)) n.push(`<b style="color:var(--do)">⚠️${loiB(m, b)}</b>`);
+      return `<td style="white-space:nowrap;font-size:13px">${n.join(" ") || "·"}</td>`;
+    };
     const hang = m => {
       const bs = baiCo(m), ss = [...giao].filter(b => o(m, b).cao >= D.nguong && o(m, b).pt).length, nop = [...yc].filter(b => o(m, b).th).length, loi = Math.max(0, d.tru[m] || 0);
-      const db = bs.filter(b => o(m, b).db).length, san = bs.reduce((a, b) => a + (o(m, b).san || 0), 0), nhan = bs.reduce((a, b) => a + (o(m, b).nhan || 0), 0);
-      const ct = bs.filter(b => giao.has(b) || yc.has(b) || o(m, b).db || o(m, b).san || o(m, b).nhan);
-      return `<tr><td><b>${esc(m)}</b></td><td>${ss}/${giao.size}</td><td>${nop}/${yc.size}</td><td ${loi ? 'style="color:var(--do);font-weight:800"' : ""}>${loi}</td><td>${db}</td><td>${san}</td><td>${nhan}</td><td><input type="checkbox" data-tuoc="${esc(m)}" ${tuoc.has(m) ? "checked" : ""} ${khoa ? "disabled" : ""} style="width:20px;height:20px" aria-label="Tước quyền vinh danh ${esc(m)}"></td><td>${ct.length ? `<details style="text-align:left"><summary class="nho-chu">Xem</summary><table class="bang" style="margin-top:4px;font-size:12px"><tr><th>Bài</th><th>Sẵn sàng</th><th>TH</th><th>Gói ĐB</th><th>Sàn</th><th>Nhận</th></tr>${ct.map(b => `<tr><td>${b}</td><td>${o(m, b).cao >= D.nguong && o(m, b).pt ? "✅" : "—"}</td><td>${yc.has(b) ? (o(m, b).th ? "✅" : "❌") : "—"}</td><td>${o(m, b).db ? "✅" : "—"}</td><td>${o(m, b).san || 0}</td><td>${o(m, b).nhan || 0}</td></tr>`).join("")}</table></details>` : "—"}</td></tr>`;
+      const db = bs.filter(b => o(m, b).db).length, san = bs.reduce((a, b) => a + (o(m, b).san || 0), 0), nhan = bs.reduce((a, b) => a + (o(m, b).nhan || 0), 0), nen = loi ? "#fee2e2" : "#fff";
+      return `<tr style="background:${nen}"><td style="${coDinh(0, nen)}"><input type="checkbox" data-tuoc="${esc(m)}" ${tuoc.has(m) ? "checked" : ""} ${khoa ? "disabled" : ""} style="width:20px;height:20px" aria-label="Tước quyền vinh danh ${esc(m)}"></td><td style="${coDinh(44, nen)}"><b>${esc(m)}</b></td><td ${loi ? 'style="color:var(--do);font-weight:800;font-size:17px"' : ""}>${loi}</td><td>${ss}/${giao.size}</td><td>${nop}/${yc.size}</td><td>${db}</td><td>${san}</td><td>${nhan}</td>${cot.map(b => oBai(m, b)).join("")}</tr>`;
     };
-    v.innerHTML = `<div class="the"><b>📅 Thống kê ${esc(tenThang(th))} · lớp ${esc(lop)} · từng học sinh</b><p class="mo nho-chu">${giao.size} bài đã giao · ${yc.size} bài yêu cầu nộp thực hành. Sẵn sàng, thực hành tính đến hết tháng; lỗi, gói đặc biệt, sàn, nhận lời tính trong tháng. Tích ô <b>Tước</b> thì em đó không có tên trong vinh danh tháng này, hạng các bạn dồn lên.</p>
-    <div class="cuon"><table class="bang" style="margin-top:8px"><tr><th>Mã</th><th>Sẵn sàng / bài giao</th><th>TH đã nộp / yêu cầu</th><th>Lỗi trừ điểm</th><th>Gói đặc biệt</th><th>Lượt lên sàn</th><th>Lượt nhận lời</th><th>Tước vinh danh</th><th>Từng bài</th></tr>${ro.map(hang).join("")}</table></div></div>`;
+    v.innerHTML = `<div class="the"><b>📅 Thống kê ${esc(tenThang(th))} · lớp ${esc(lop)} · từng học sinh</b><p class="mo nho-chu">${giao.size} bài đã giao · ${yc.size} bài yêu cầu nộp thực hành. Hàng tô đỏ là em có lỗi trừ điểm. Tích ô <b>Tước</b> thì em đó không có tên trong vinh danh tháng này, hạng các bạn dồn lên. Sẵn sàng, thực hành tính đến hết tháng; lỗi, gói đặc biệt, sàn, nhận lời tính trong tháng.</p>
+    <p class="nho-chu" style="margin:4px 0"><b>Ở cột từng bài:</b> ✅ sẵn sàng · ⬜ chưa sẵn sàng · 🖼️ đã nộp thực hành · 🚫 chưa nộp thực hành · 🌸 đã làm gói đặc biệt · ⚔️ lượt lên sàn · 🤝 lượt nhận lời · ⚠️ số lỗi</p>
+    <div class="cuon"><table class="bang" style="margin-top:8px"><tr><th style="${coDinh(0, "#e6f4f2")}">Tước</th><th style="${coDinh(44, "#e6f4f2")}">Mã</th><th>Lỗi</th><th>Sẵn sàng / giao</th><th>TH nộp / yêu cầu</th><th>Gói ĐB</th><th>Lên sàn</th><th>Nhận lời</th>${cot.map(b => `<th>Bài ${b}</th>`).join("")}</tr>${ro.map(hang).join("")}</table></div>${d.truBai ? "" : '<p class="sai-hop nho-chu">Cô dán Apps Script bản mới thì cột từng bài mới hiện lỗi ⚠️ của từng bài. Cột Lỗi tổng vẫn đúng.</p>'}</div>`;
     v.querySelectorAll("[data-tuoc]").forEach(c => c.onchange = () => {
       fetch(D.guiVe, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ khoa: D.guiKhoa, gv: laCo, tuoc: { th, lop, ma: c.dataset.tuoc, co: c.checked ? 1 : 0 } }) })
         .then(() => bao(c.checked ? `Đã tước vinh danh ${c.dataset.tuoc} · ${tenThang(th)}` : `Đã trả lại quyền vinh danh ${c.dataset.tuoc}`)).catch(() => { c.checked = !c.checked; bao("Chưa ghi được, cô kiểm tra mạng"); });
@@ -15778,6 +15791,45 @@ function hienNopQR(idBai, hop){
   cv.toBlob(bl => { $("#luuAnh").onclick = () => { taiTep(ten, bl); bao("Đã lưu ảnh minh chứng ✔"); }; });
 }
 
+// ───── XEM GỌN: mỗi khu vực ở trang cô có nút thu gọn (đầu và cuối khu vực); cuối mỗi thẻ có nút về đầu trang. Tự gắn cả khi dữ liệu vẽ lại
+const tgDaGon = new Set();
+const tgKhoa = h => h.textContent.replace(/\s+/g, " ").trim().slice(0, 60);
+function tgDat(the, gon){
+  the.classList.toggle("tg-gon", gon);
+  const n = the.querySelector(":scope > .tg-dau .tg-nut"); if (n) { n.textContent = gon ? "▾ Mở ra" : "▴ Thu gọn"; n.setAttribute("aria-expanded", gon ? "false" : "true"); }
+  gon ? tgDaGon.add(the.dataset.tg) : tgDaGon.delete(the.dataset.tg);
+}
+function ganXemGon(){
+  const trangCo = laCo && !ma;
+  if (trangCo) app.querySelectorAll(".the").forEach(the => {
+    if (the.tagName === "DETAILS" || the.classList.contains("bai") || the.classList.contains("tb") || the.querySelector(":scope > .tg-than")) return;
+    const dau = the.firstElementChild;
+    if (!dau || !(dau.tagName === "B" || (dau.classList.contains("hang") && dau.firstElementChild && dau.firstElementChild.tagName === "B")) || !the.children[1]) return;
+    the.dataset.tg = tgKhoa(dau.tagName === "B" ? dau : dau.firstElementChild); the.classList.add("tg-co");
+    const hd = document.createElement("div"), than = document.createElement("div"), nut = document.createElement("button"), duoi = document.createElement("div"), nut2 = document.createElement("button");
+    hd.className = "tg-dau"; than.className = "tg-than"; nut.className = nut2.className = "tg-nut khong-in"; nut.type = nut2.type = "button"; duoi.className = "tg-duoi"; nut2.textContent = "▴ Thu gọn khu vực này";
+    while (dau.nextSibling) than.appendChild(dau.nextSibling);
+    the.appendChild(hd); hd.appendChild(dau); hd.appendChild(nut); the.appendChild(than); duoi.appendChild(nut2); than.appendChild(duoi);
+    nut.onclick = e => { e.stopPropagation(); tgDat(the, !the.classList.contains("tg-gon")); };
+    nut2.onclick = e => { e.stopPropagation(); tgDat(the, true); the.scrollIntoView({ block: "start" }); };
+    tgDat(the, tgDaGon.has(the.dataset.tg));
+  });
+  // nút thu gọn ở cuối chỉ hiện với khu vực dài
+  if (trangCo) app.querySelectorAll(".the > .tg-than > .tg-duoi").forEach(d => { d.style.display = d.parentElement.offsetHeight > 320 ? "" : "none"; });
+  const co = app.querySelector(":scope > .cuoi-the");
+  if ($("#vao") || app.children.length < 2) { if (co) co.remove(); return; }
+  if (co) { if (app.lastElementChild !== co) app.appendChild(co); return; }
+  const c = document.createElement("div"); c.className = "cuoi-the khong-in";
+  c.innerHTML = '<button type="button" class="nut phu nho" data-cuoi="len">⬆️ Về đầu trang</button>' + (trangCo ? '<button type="button" class="nut phu nho" data-cuoi="gon">▴ Thu gọn tất cả</button>' : "");
+  c.onclick = e => {
+    const v = e.target.closest("[data-cuoi]"); if (!v) return;
+    if (v.dataset.cuoi === "gon") app.querySelectorAll(".the.tg-co").forEach(t => { if (!t.querySelector("#locLop,#thuLop,#gBai")) tgDat(t, true); });   // giữ khu vực chọn lớp, bài
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  app.appendChild(c);
+}
+let tgCho = false;
+new MutationObserver(() => { if (tgCho) return; tgCho = true; setTimeout(() => { tgCho = false; ganXemGon(); }, 30); }).observe(app, { childList: true, subtree: true });
 dayDi();
 if (ma && D.matKhau && !laThu() && !hs().mkOk) { tatCa._lopCu = hs().lop; ma = null; ghi(); }
 if (ma && !laThu() && fidHS(ma) && !phienHSMo(ma)) { tatCa._lopCu = hs().lop; ma = null; ghi(); }   // đã bật mở khoá nhanh: mở app lại phải mở khoá
