@@ -13176,7 +13176,7 @@ const thieu = id => { const x = bh(id), t = []; if (x.cao < D.nguong) t.push(`đ
 // ───── ĐIỂM TÍCH LUỸ TÀI KHOẢN: cộng dồn mọi hoạt động học tập, luyện tập, thách đấu
 // Mức điểm tính cho cả năm (34 bài): em chăm đều ≈ 260 ⭐/bài + thách đấu hằng tuần → chạm 10 000 ⭐ khoảng cuối năm;
 // em rất chăm, làm tối đa mọi mục → khoảng 13 000 ⭐. Muốn chỉnh độ khó chỉ cần sửa bảng XP dưới đây.
-const XP = { khongHopTac: 8, congNhan: 4, congLuot: 4, tem: 80, phantu: 30, on: 5, onToiDa: 6, ai: 10, aiToiDa: 4, tdChia: 20, tdTuan: 50, ks: 20, dbDu: 10, dbKha: 5, dbTru: 5, dbNgay: 7 };
+const XP = { khongHopTac: 8, congNhan: 4, congLuot: 4, tem: 80, phantu: 30, on: 5, onToiDa: 6, ai: 10, aiToiDa: 4, tdChia: 20, tdTuan: 50, ks: 20, dbDu: 50, dbKha: 30, dbTru: 30, dbNgay: 7 };
 const XP_LOAI = { tru: ["🤝 Không hợp tác (cô trừ)", `−${XP.khongHopTac} mỗi lần`], hoan: ["↩️ Cô hoàn điểm", `+${XP.khongHopTac}`], db: ["🎨 Gói đặc biệt", `+${XP.dbDu} đúng 12/12 · +${XP.dbKha} đúng 7–11`], dbTru: ["⏳ Bỏ lỡ gói đặc biệt", `−${XP.dbTru} mỗi bài`], cong: ["🚪 Luyện tập Cổng", `điểm × ${XP.congNhan} (4 lượt đầu mỗi bài)`], tem: ["🛂 Tem hộ chiếu", `+${XP.tem}`], phantu: ["🪞 Phản tư", `+${XP.phantu} mỗi bài`], on: ["📕 Ôn câu sai làm đúng", `+${XP.on} (tối đa ${XP.onToiDa} câu/bài)`], ai: ["🤖 Hỏi AI và tự đánh giá", `+${XP.ai} (tối đa ${XP.aiToiDa} câu/bài)`], td: ["⚔️ Thách đấu", `điểm ÷ ${XP.tdChia} (tối đa ${XP.tdTuan}/tuần)`], ks: ["📋 Khảo sát", `+${XP.ks}`] };
 const CAP_XP = [[0, "Tân binh số"], [500, "Học viên chăm chỉ"], [1500, "Chiến binh số"], [3000, "Chuyên gia nhí"], [6000, "Bậc thầy Tin học"], [10000, "Huyền thoại Cổng sẵn sàng"]];
 function xpCua(h){
@@ -13973,10 +13973,14 @@ function deTD(b, seed, n){
 // 12 câu cố định (trọng tâm, vận dụng); mỗi câu tô một vùng ô của ma trận 24 × 24: đúng → đúng màu, sai → lệch màu.
 // Điểm (chỉ lần làm đầu tiên): đúng 12/12 +10 ⭐ · đúng 7–11 +5 ⭐ · không làm trong 7 ngày kể từ khi mở bài −5 ⭐.
 const DB_MAU_PHU = ["#475569", "#1e293b", "#ea580c", "#9333ea"];
-const dbHan = x => (x.moT || Date.now()) + XP.dbNgay * 864e5;
+// mức điểm mới áp dụng từ 01/11/2026: bài mở trước ngày này được tính đủ 7 ngày từ ngày đó (giờ Việt Nam); DB_TRU_CU là mức trừ cũ để hoàn
+const DB_MOC = Date.UTC(2026, 10, 1) - 7 * 36e5, DB_TRU_CU = 5;
+const dbHan = x => Math.max(x.moT || Date.now(), DB_MOC) + XP.dbNgay * 864e5;
 function kiemTruDB(){   // tự trừ điểm khi quá hạn mà chưa làm gói đặc biệt (một lần mỗi bài)
   if (!ma || laThu() || !D.db) return;
   const h = hs(); let doi = false;
+  // một lần: bài trước đây đã bị trừ mà chưa làm thì hoàn 5 ⭐ và mở lại hạn mới, để cả lớp cùng tính từ ngày cập nhật
+  if (!h.dbMoc) { h.dbMoc = 1; doi = true; const xp = xpCua(h); D.bai.forEach(b => { const x = h.bai[b.id]; if (!x || !x.dbTru || x.dbL) return; x.dbTru = 0; xp.tong += DB_TRU_CU; xp.n.dbTru = Math.max(0, (xp.n.dbTru || 0) - 1); xp.d.dbTru = Math.min(0, (xp.d.dbTru || 0) + DB_TRU_CU); }); }
   D.bai.forEach(b => { const x = h.bai[b.id]; if (!x || !x.mo || !D.db[b.id]) return;
     if (!x.moT) { x.moT = Date.now(); doi = true; return; }
     if (!x.dbL && !x.dbTru && Date.now() > dbHan(x)) { x.dbTru = 1; truXP("dbTru", XP.dbTru); doi = true; bao(`⏳ Em bỏ lỡ gói đặc biệt Bài ${b.id} — trừ ${XP.dbTru} ⭐. Em vẫn vào khám phá bức tranh được nhé!`); } });
@@ -14002,7 +14006,7 @@ function theDB(b){
   <p class="mo nho-chu">12 câu luyện tập – vận dụng – trọng tâm của bài${(D.cauMoi || {})[b.id] ? ", có câu truyện tranh, kéo thả, ghép cặp, chọn trên hình…" : ""}, trong 5 phút. Mỗi câu trả lời tô một mảng màu… trả lời xong, <b>một bức tranh bí mật</b> hiện ra cùng một câu nói truyền cảm hứng. Mỗi bài một bất ngờ!</p>
   ${da ? `<p class="nho-chu">✅ Em đã khám phá: đúng <b>${da.k}/12</b>${x.dbMax > da.k ? ` · cao nhất ${x.dbMax}/12` : ""}${x.dbMax === 12 ? " · 🖼️ tranh hoàn chỉnh" : ""}</p>`
        : x.dbTru ? `<p class="nho-chu" style="color:#b91c1c">⏳ Đã quá hạn tính điểm (trừ ${XP.dbTru} ⭐) — em vẫn làm được để khám phá bức tranh.</p>`
-       : `<p class="nho-chu">⏰ Hạn tính điểm: <b>${new Date(dbHan(x)).toLocaleDateString("vi-VN")}</b> (${XP.dbNgay} ngày kể từ khi mở bài)</p>`}
+       : `<p class="nho-chu">⏰ Hạn tính điểm: <b>${new Date(dbHan(x)).toLocaleDateString("vi-VN")}</b> (${(x.moT || 0) < DB_MOC ? "tính lại từ 01/11/2026" : XP.dbNgay + " ngày kể từ khi mở bài"})</p>`}
   <details class="nho-chu"><summary><b>📖 Quy tắc điểm gói đặc biệt</b></summary><p style="margin:6px 0">Tính ở <b>lần làm đầu tiên</b>: đúng cả <b>12/12</b> → <b>thưởng nóng +${XP.dbDu} ⭐</b> · đúng <b>7–11 câu</b> → <b>+${XP.dbKha} ⭐</b> · dưới 7 câu → không cộng. <b>Không làm</b> trong ${XP.dbNgay} ngày kể từ khi mở bài → <b>trừ ${XP.dbTru} ⭐</b>. Làm lại bao nhiêu lần cũng được để hoàn thiện bức tranh, nhưng chỉ lần đầu được tính điểm.</p></details>
   <button class="nut" style="background:#7c3aed" id="dbBatDau">🎨 ${da ? "Làm lại để hoàn thiện tranh" : "Bắt đầu (5 phút)"}</button></div>`;
 }
