@@ -13286,7 +13286,7 @@ MAN.vao = (vai) => {
   vai = vai || (fidCo() || /[?&]vai=gv(&|$)/.test(location.search) ? "gv" : "hs");
   app.innerHTML = `<div class="mo-dau"><div class="logo">🚪</div><h1>Cổng sẵn sàng</h1><div class="mo">Tin học 10 · Kết nối tri thức · 34 bài</div></div>
   <div class="vai"><button data-vai="hs" class="${vai === "hs" ? "chon" : ""}"><b>🎒</b>Em là học sinh</button><button data-vai="gv" class="${vai === "gv" ? "chon" : ""}"><b>👩‍🏫</b>Tôi là giáo viên</button></div>
-  ${vai === "hs" ? `<div class="the"><label class="nh" for="lop">Lớp</label><input type="text" id="lop" placeholder="VD: 10A3" autocomplete="off" maxlength="8" value="${esc(tatCa._lopCu || "")}">
+  ${vai === "hs" ? `${Object.keys(dsFidHS()).length ? `<div class="the">${Object.keys(dsFidHS()).map(m => `<button class="nut rong cam" data-fidhs="${esc(m)}" style="margin-bottom:8px">🔐 Mở khoá vào app · ${esc(m)} · ${esc(dsFidHS()[m].lop)}</button>`).join("")}<p class="mo nho-chu" style="text-align:center;margin:0">hoặc nhập mã và mật khẩu ở dưới</p></div>` : ""}<div class="the"><label class="nh" for="lop">Lớp</label><input type="text" id="lop" placeholder="VD: 10A3" autocomplete="off" maxlength="8" value="${esc(tatCa._lopCu || "")}">
   <label class="nh" for="ma">Mã học sinh (HS + số thứ tự của em trong danh sách lớp)</label><input type="text" id="ma" placeholder="VD: HS07" autocomplete="off" maxlength="12">
   ${D.matKhau ? '<label class="nh" for="mkVao">Mật khẩu (4 kí tự trên phiếu cô phát)</label><input type="text" id="mkVao" placeholder="VD: K7PX" autocomplete="off" maxlength="6" style="text-transform:uppercase;letter-spacing:3px">' : ""}
   <div id="xemBai" class="hang" style="gap:12px;margin-top:12px;min-height:60px"></div>
@@ -13300,6 +13300,7 @@ MAN.vao = (vai) => {
   if (vai === "hs") {
     const xem = () => { const q = quanBai($("#ma").value); $("#xemBai").innerHTML = q && /^HS\d{1,4}$/i.test($("#ma").value.trim()) ? `${veBai($("#ma").value, 1)}<div><b>Quân bài của em: ${q.doc}</b><div class="mo nho-chu">Nhớ quân bài này — cô sẽ gọi và nhắc em bằng nó.</div></div>` : ""; };
     $("#ma").oninput = xem;
+    document.querySelectorAll("[data-fidhs]").forEach(b => b.onclick = () => vaoFidHS(b.dataset.fidhs));
     $("#vao").onclick = () => {
       const m = $("#ma").value.trim().toUpperCase().replace(/\s+/g, ""), l = $("#lop").value.trim().toUpperCase();
       if (!l) return bao("Em ghi lớp, VD 10A3");
@@ -13307,7 +13308,7 @@ MAN.vao = (vai) => {
       if (!/^HS\d{1,4}$/.test(m)) return bao("Mã học sinh có dạng HS + số, VD HS07");
       const p = D.matKhau ? $("#mkVao").value.trim().toUpperCase().replace(/\s+/g, "") : "";
       kiemMK(l, m, p, hb => kiemLopHS(l, k => {
-        const moi = !tatCa[m]; ma = m; tatCa._lopCu = l; hs().lop = l; hs().mkOk = 1; if (hb) hs().mkBam = hb; if (k.han) { hs().hanThu = k.han; hs().lopThu = k.thu; } ghi();
+        const moi = !tatCa[m]; ma = m; tatCa._lopCu = l; hs().lop = l; hs().mkOk = 1; if (hb) hs().mkBam = hb; if (k.han) { hs().hanThu = k.han; hs().lopThu = k.thu; } ghi(); moPhienHS(m);
         if (k.thu) bao(`🧪 Lớp dùng thử — em dùng app đến hết ngày ${ngayHan(k.han)}`);
         if (moi && D.guiVe) return timTienDo(ok => { if (!ok) { vaoNha(); baoDaVao(); } });
         vaoNha(); layTienDoSheet(false);
@@ -13340,11 +13341,13 @@ MAN.nha = () => {
     const tt = !x.mo ? '<span class="chip">🔒 Chưa mở</span>' : ss ? `<span class="chip xanh">✅ Sẵn sàng · ${x.cao}/10</span>` : x.cao ? `<span class="chip cam">Cao nhất ${x.cao}/10</span>` : '<span class="chip cam">Đang học</span>';
     s += `<div class="the bai ${x.mo ? "" : "khoa"}" data-id="${b.id}"><div class="so" style="background:${b.mau}">${b.id}</div><div style="flex:1;min-width:0"><h3>Bài ${b.id}. ${esc(b.ten)}</h3>${tt} <span class="mo nho-chu">${b.trang}</span><div class="vach"><i style="width:${td}%"></i></div></div></div>`;
   });
-  s += `<p class="mo nho-chu" style="margin-top:16px">Mở bài nào cũng cần mã PIN của cô. Bài mới chỉ mở khi bài em mở gần nhất đã <b>sẵn sàng</b> = điểm cổng từ ${D.nguong}/10 <b>và</b> đã lưu Phản tư. <button class="nut phu nho" id="ra">Đổi mã học sinh</button></p>`;
+  s += `<p class="mo nho-chu" style="margin-top:16px">Mở bài nào cũng cần mã PIN của cô. Bài mới chỉ mở khi bài em mở gần nhất đã <b>sẵn sàng</b> = điểm cổng từ ${D.nguong}/10 <b>và</b> đã lưu Phản tư. <button class="nut phu nho" id="ra">Đổi mã học sinh</button></p>` + theFidHS();
   app.innerHTML = s;
+  if ($("#batFidHS")) $("#batFidHS").onclick = batFidHS;
+  if ($("#tatFidHS")) $("#tatFidHS").onclick = tatFidHS;
   document.querySelectorAll(".bai").forEach(el => el.onclick = () => moBai(+el.dataset.id));
   if ($("#xemTB")) $("#xemTB").onclick = () => di("thongbao");
-  $("#ra").onclick = () => { ma = null; ghi(); di("vao"); };
+  $("#ra").onclick = () => { dongPhienHS(); ma = null; ghi(); di("vao"); };
 };
 
 function moBai(id){
@@ -14139,20 +14142,20 @@ MAN.hochieu = () => {
 // ───── TRANG CÔ: phần mở rộng (tác động, AI cho cô, ghép đội, kiểm tra vé)
 const TB = a => a.length ? (a.reduce((x, y) => x + y, 0) / a.length) : null;
 const so1 = v => v == null ? "—" : (Math.round(v * 10) / 10).toString().replace(".", ",");
-function phanTacDong(ds){
+function phanTacDong(ds, bai){
   const c2 = ds.filter(o => o.ks && o.ks.dau && o.ks.cuoi), c1 = ds.filter(o => o.ks && o.ks.dau);
   const muc = [];
-  ds.forEach(o => Object.values(o.b).forEach(x => { if (x.n) muc.push(x); }));
+  ds.forEach(o => { const x = o.b[bai]; if (x && x.n) muc.push(x); });
   const dau = TB(muc.filter(x => x.f != null).map(x => x.f)), cao = TB(muc.filter(x => x.f != null).map(x => x.s));
   const ss = muc.filter(x => x.r).length;
-  return `<div class="the"><b>📊 Tác động (minh chứng cho tiêu chí 3)</b>
+  return `<div class="the"><b>📊 Tác động · Bài ${bai} (minh chứng cho tiêu chí 3)</b>
     <table class="bang" style="margin-top:8px"><tr><th>Chỉ số</th><th>Kết quả</th></tr>
     <tr><td style="text-align:left">Học sinh gửi báo cáo</td><td><b>${ds.length}</b></td></tr>
     <tr><td style="text-align:left">Lượt bài đã làm cổng / đạt “sẵn sàng”</td><td><b>${muc.length}</b> / <b>${ss}</b> (${muc.length ? Math.round(ss / muc.length * 100) : 0}%)</td></tr>
     <tr><td style="text-align:left">Điểm cổng lượt đầu → điểm cao nhất (trung bình)</td><td><b>${so1(dau)} → ${so1(cao)}</b></td></tr></table>
-    <p class="nho-chu" style="margin:10px 0 4px"><b>Khảo sát trước – sau</b> (thang 1–5; ${c2.length} HS đã làm cả hai lần, ${c1.length} HS làm khảo sát đầu)</p>
+    <details style="margin-top:10px"><summary class="nho-chu"><b>Khảo sát trước – sau, chung cho cả năm, không theo bài</b> (thang 1–5; ${c2.length} HS đã làm cả hai lần, ${c1.length} HS làm khảo sát đầu)</summary>
     <table class="bang"><tr><th>Câu</th><th>Đầu</th><th>Cuối</th></tr>${KS.map((c, i) => `<tr><td style="text-align:left">${esc(c)}</td><td>${so1(TB(c2.map(o => o.ks.dau.a[i])))}</td><td><b>${so1(TB(c2.map(o => o.ks.cuoi.a[i])))}</b></td></tr>`).join("")}</table>
-    ${ds.filter(o => o.ks && o.ks.cuoi && (o.ks.cuoi.thich || o.ks.cuoi.gopy)).map(o => `<div class="dk"><span class="chip">${esc(o.ma)}</span> ${o.ks.cuoi.thich ? "Thích: " + esc(o.ks.cuoi.thich) : ""} ${o.ks.cuoi.gopy ? "· Góp ý: " + esc(o.ks.cuoi.gopy) : ""}</div>`).join("")}
+    ${ds.filter(o => o.ks && o.ks.cuoi && (o.ks.cuoi.thich || o.ks.cuoi.gopy)).map(o => `<div class="dk"><span class="chip">${esc(o.ma)}</span> ${o.ks.cuoi.thich ? "Thích: " + esc(o.ks.cuoi.thich) : ""} ${o.ks.cuoi.gopy ? "· Góp ý: " + esc(o.ks.cuoi.gopy) : ""}</div>`).join("")}</details>
     <p class="mo nho-chu">Số liệu thống kê trong app (không phải điểm đánh giá chính thức). Đưa vào slide “Kết quả và tác động”.</p></div>`;
 }
 const nhacChot = (b, co, top, hoi) => `Tôi là giáo viên Tin học lớp 10 (sách Kết nối tri thức), vừa dạy Bài ${b.id}: ${b.ten}.
@@ -14331,7 +14334,7 @@ function theThongKe(){
   <div class="tk-luoi">${o1("✅", "Qua cổng", qua, "#16a34a", `đạt từ ${D.nguong}/10 + phản tư`)}${o1("⏳", "Chưa qua", chua, "#d97706", "đã vào app, chưa sẵn sàng bài này")}${o1("🚫", "Chưa đăng nhập", chuaVao, "#dc2626", "Sheet chưa có dữ liệu của em")}${o1("🏠", "Vắng hôm nay", [...vg], "#7c3aed", "theo điểm danh của cô")}</div>
   ${ro.length ? "" : '<p class="sai-hop nho-chu">Lớp chưa có sĩ số — cô nhập ở mục 🏫 Lớp.</p>'}</div>`;
 }
-const veTK = () => { const v = $("#tkLop"); if (v) v.innerHTML = theThongKe(); };
+const veTK = () => { const v = $("#tkLop"); if (v) v.innerHTML = ptDu() && ptChon.lop !== "*" ? theThongKe() : ""; };
 
 // ───── ĐỒNG HỒ BẤM GIỜ + CHUÔNG (nổi ở góc màn hình, luôn nằm trên cả màn chiếu quy trình)
 let amCtx = null;
@@ -14697,13 +14700,65 @@ MAN.giayCN = (thChon) => {
 
 // ───── TRANG CỦA CÔ
 let laCo = false;
-MAN.gv = () => {
+// bảng tham gia theo từng bài: gói đặc biệt lấy từ mã báo cáo + trang “Gói đặc biệt”; lên sàn, nhận thách đấu chỉ có ở trang “Thách đấu”
+// Phân tích: mỗi lần vào thẻ, cô chọn lớp; bài tự hiện bài giao gần nhất, cô chọn lại khi muốn xem bài khác. Chỉ hiện dữ liệu của bài đã chọn
+let ptChon = { lop: "", bai: 0, tuChon: false };
+const ptDu = () => !!(ptChon.lop && ptChon.bai);
+const baiDaGiao = lop => { const ds = kho.viec.filter(v => !lop || lop === "*" || v.lop.includes(lop)); return ds.length ? ds[ds.length - 1].bai : 0; };
+function ptTheoLop(){ if (!ptChon.tuChon) ptChon.bai = baiDaGiao(ptChon.lop); if (ptChon.bai) { kho.dangDay.bai = ptChon.bai; ghiKho(); } }
+let tgDL = null, tgDang = null;
+function layThamGia(ep){
+  if (!D.guiVe || !navigator.onLine) return Promise.resolve(tgDL);
+  if (tgDang) return tgDang;
+  if (tgDL && !ep && Date.now() - tgDL.luc < 120000) return Promise.resolve(tgDL);
+  tgDang = fetch(D.guiVe + (D.guiVe.includes("?") ? "&" : "?") + "tkbai=1&gv=" + encodeURIComponent(laCo)).then(r => r.json()).then(d => {
+    if (d.het) { hetThu(d.loi); return null; }
+    tgDL = { luc: Date.now(), bai: d.ok && d.bai ? d.bai : null, loi: !d.ok };
+    return tgDL;
+  }).catch(() => tgDL).finally(() => { tgDang = null; });
+  return tgDang;
+}
+function veThamGia(ep){
+  const v = $("#tgBai"); if (!v) return;
+  if (!ptDu()) { v.innerHTML = ""; return; }
+  const chon = ptChon.lop === "*" ? "" : ptChon.lop, cacLop = chon ? [chon] : Object.keys(kho.lop).filter(l => kho.lop[l].day).sort();
+  const ve = dl => {
+    if (!$("#tgBai")) return;
+    const coTD = !!(dl && dl.bai), siso = cacLop.every(l => kho.lop[l] && +kho.lop[l].siso) ? cacLop.reduce((a, l) => a + +kho.lop[l].siso, 0) : 0;
+    const hang = D.bai.filter(b => b.id === ptChon.bai).map(b => {
+      const gom = { db: {}, san: {}, nhan: {} };
+      cacLop.forEach(l => {
+        const nhan = m => cacLop.length > 1 ? l + "·" + m : m, sv = coTD && dl.bai[l] && dl.bai[l][b.id];
+        dsKho(l).forEach(o => { if (o.b[b.id] && o.b[b.id].dbL) gom.db[nhan(o.ma)] = gom.db[nhan(o.ma)] || 0; });
+        if (sv) ["db", "san", "nhan"].forEach(k => Object.keys(sv[k]).forEach(m => { gom[k][nhan(m)] = sv[k][m]; }));
+      });
+      return { b, gom };
+    });
+    const o = (dem, co) => {
+      if (!co) return "—";
+      const ma = Object.keys(dem).sort((a, c) => a.localeCompare(c, "vi", { numeric: true })), luot = ma.reduce((a, m) => a + dem[m], 0);
+      if (!ma.length) return `0${siso ? "/" + siso : ""}`;
+      return `<b>${ma.length}</b>${siso ? "/" + siso : ""}${luot ? `<div class="mo nho-chu">${luot} lượt</div>` : ""}<details class="nho-chu" style="text-align:left"><summary>Xem mã</summary>${ma.join(" · ")}</details>`;
+    };
+    v.innerHTML = `<div class="the"><div class="hang" style="justify-content:space-between"><b>🎯 Tham gia · Bài ${ptChon.bai} · ${chon ? "Lớp " + esc(chon) : "Tất cả lớp"}</b>${D.guiVe ? '<button class="nut phu nho" id="tgMoi">🔄 Cập nhật</button>' : ""}</div>
+    <div class="cuon"><table class="bang" style="margin-top:8px"><tr><th style="text-align:left">Bài</th><th>🌸 Luyện gói đặc biệt</th><th>⚔️ Gửi bài lên sàn</th><th>🤝 Nhận thách đấu</th></tr>${hang.map(h => `<tr><td style="text-align:left">Bài ${h.b.id}. ${esc(h.b.ten)}</td><td>${o(h.gom.db, true)}</td><td>${o(h.gom.san, coTD)}</td><td>${o(h.gom.nhan, coTD)}</td></tr>`).join("")}</table></div>
+    <p class="mo nho-chu">Số đậm là số học sinh, mỗi em chỉ tính 1 lần; “lượt” là tổng số lần làm. Một em có thể vừa lên sàn vừa nhận thách đấu nên không cộng các cột với nhau.</p>
+    ${coTD ? "" : `<p class="sai-hop nho-chu">Dấu — là chưa có số liệu ${navigator.onLine ? "từ Google Sheet: cô dán Apps Script bản mới, chọn Phiên bản mới rồi bấm 🔄 Cập nhật." : "vì máy đang mất mạng."}</p>`}</div>`;
+    if ($("#tgMoi")) $("#tgMoi").onclick = () => veThamGia(true);
+  };
+  ve(tgDL);
+  layThamGia(ep).then(ve);
+}
+MAN.gv = (giu) => {
   if (!laCo) {
     return MAN.vao("gv");
   }
-  app.innerHTML = dau("📊 Phân tích", "Câu sai nhiều nhất · tác động · ghép đội · AI cho cô") + `<div id="tkLop">${theThongKe()}</div>
-  <div class="the"><b>Lớp phân tích</b> <select id="locLop" style="width:auto">${Object.keys(kho.lop).filter(l => kho.lop[l].day).sort().map(l => `<option ${l === lopBaiDay().lop ? "selected" : ""}>${esc(l)}</option>`).join("")}<option value="">Tất cả lớp</option></select>
-  <details style="margin-top:8px"><summary class="nho-chu">Dán thêm mã báo cáo (nếu có)</summary><textarea id="dan" style="min-height:90px" placeholder="CSS1:... hoặc CSS2:..."></textarea></details><p></p><p></p><div class="hang">${D.guiVe ? '<button class="nut cam" id="layGS">📥 Lấy kết quả từ Google Sheet</button>' : ""}<button class="nut" id="th">Tổng hợp</button><button class="nut phu" id="csv">Tải bảng CSV</button></div></div><div id="kqgv"></div>
+  if (giu !== true) { lopBaiDay(); ptChon = { lop: "", bai: 0, tuChon: false }; ptTheoLop(); }
+  app.innerHTML = dau("📊 Phân tích", "Câu sai nhiều nhất · tác động · ghép đội · AI cho cô") + `<div id="tkLop"></div>
+  <div class="the"><b>Lớp phân tích</b> <select id="locLop" style="width:auto"><option value="">— Chọn lớp —</option>${Object.keys(kho.lop).filter(l => kho.lop[l].day).sort().map(l => `<option ${l === ptChon.lop ? "selected" : ""}>${esc(l)}</option>`).join("")}<option value="*" ${ptChon.lop === "*" ? "selected" : ""}>Tất cả lớp</option></select>
+  <b style="margin-left:8px">Bài</b> <select id="locBai" style="width:auto;max-width:100%"><option value="">— Chọn bài —</option>${D.bai.map(b => `<option value="${b.id}" ${b.id === ptChon.bai ? "selected" : ""}>Bài ${b.id}. ${esc(b.ten)}</option>`).join("")}</select>
+  <p class="mo nho-chu" style="margin:6px 0 0">${ptChon.bai && !ptChon.tuChon ? "App hiện sẵn bài giao gần nhất. " : ""}Chỉ hiện dữ liệu của bài này. Muốn xem bài khác, cô chọn lại bài.</p>
+  <details style="margin-top:8px"><summary class="nho-chu">Dán thêm mã báo cáo (nếu có)</summary><textarea id="dan" style="min-height:90px" placeholder="CSS1:... hoặc CSS2:..."></textarea></details><p></p><p></p><div class="hang">${D.guiVe ? '<button class="nut cam" id="layGS">📥 Lấy kết quả từ Google Sheet</button>' : ""}<button class="nut" id="th">Tổng hợp</button><button class="nut phu" id="csv">Tải bảng CSV</button></div></div><div id="tgBai"></div><div id="kqgv"></div>
   ${theMGBC()}
   ${theTruDiem()}
   <div class="the khong-in ${laQL() ? "an" : ""}"><b>🎫 Kiểm tra vé chuyên gia</b><div class="hang" style="margin-top:8px"><input type="text" id="vMa" placeholder="Mã HS" style="width:90px"><input type="number" id="vBai" placeholder="Bài" style="width:70px"><input type="number" id="vDiem" placeholder="Điểm" style="width:80px"><input type="text" id="vMaVe" placeholder="Mã vé" style="width:100px"><button class="nut nho" id="vKT">Kiểm tra</button></div><div id="vKQ"></div></div>
@@ -14713,11 +14768,12 @@ MAN.gv = () => {
   $("#hienPin").onclick = () => {
     const pin = layPin(); if (!Object.keys(pin).length) return bao("Không đọc được bảng mã PIN");
     $("#bangPin").innerHTML = `<div class="cuon"><table class="bang" style="margin-top:8px"><tr><th>Bài</th><th>Tên bài</th><th>Mã PIN</th></tr>${D.bai.map(b => `<tr><td>${b.id}</td><td style="text-align:left">${esc(b.ten)}</td><td><b class="mono" style="font-size:17px">${esc(pin[b.id] || "")}</b></td></tr>`).join("")}</table></div>`;
-    $("#hienPin").textContent = "Đang hiện — bấm để ẩn"; $("#hienPin").onclick = () => MAN.gv();
+    $("#hienPin").textContent = "Đang hiện — bấm để ẩn"; $("#hienPin").onclick = () => MAN.gv(true);
   };
   let ds = [];
-  ganMGBC(); ganDangDay(() => MAN.gv()); ganTruDiem(); hienDongHo();
-  layTuSheet(veTK);
+  ganMGBC(); const ddCu = Object.assign({}, lopBaiDay());
+  ganDangDay(() => { const d = lopBaiDay(); if (d.bai !== ddCu.bai) { ptChon.bai = d.bai; ptChon.tuChon = true; } if (d.lop !== ddCu.lop) { ptChon.lop = d.lop; ptTheoLop(); } MAN.gv(true); }); ganTruDiem(); hienDongHo();
+  layTuSheet(() => { veTK(); veThamGia(); if (ptDu()) $("#th").click(); }); veTK(); veThamGia();
   $("#vKT").onclick = () => { const ok = maVe($("#vMa").value.trim().toUpperCase(), +$("#vBai").value, +$("#vDiem").value) === $("#vMaVe").value.trim().toUpperCase(); $("#vKQ").innerHTML = ok ? '<div class="ok-hop">✅ Vé hợp lệ.</div>' : '<div class="sai-hop">❌ Vé không khớp — cô xem lại mã HS, số bài, điểm.</div>'; };
   if (!window._ganChep) { window._ganChep = 1; document.addEventListener("click", e => { const c = e.target.closest && e.target.closest("[data-chep]"); if (c) saoChep(decodeURIComponent(c.dataset.chep)); }); }
   if ($("#layGS")) $("#layGS").onclick = () => {
@@ -14731,12 +14787,13 @@ MAN.gv = () => {
   };
   $("#th").onclick = () => {
     const loi = $("#dan").value.trim() ? nhapVanBan($("#dan").value).loi : 0; $("#dan").value = "";
-    ds = dsKho($("#locLop").value); veTK();
+    if (!ptDu()) { ds = []; return $("#kqgv").innerHTML = '<div class="sai-hop">Cô chọn lớp và bài cần phân tích ở trên nhé.</div>'; }
+    ds = dsKho(ptChon.lop === "*" ? "" : ptChon.lop); veTK(); veThamGia();
     if (!ds.length) return $("#kqgv").innerHTML = '<div class="sai-hop">Chưa có kết quả của lớp này. Cô vào 📥 Thu bài để nhận ảnh QR / mã của học sinh.</div>';
-    const coBai = D.bai.filter(b => ds.some(o => o.b[b.id]));
+    const coBai = D.bai.filter(b => b.id === ptChon.bai);
     let s = `<div class="the"><b>${ds.length} học sinh</b>${loi ? ` · <span class="chip do">${loi} mã lỗi</span>` : ""}<div class="cuon"><table class="bang" style="margin-top:8px"><tr><th>Mã</th><th>Lớp</th>${coBai.map(b => `<th>Bài ${b.id}</th>`).join("")}</tr>${ds.map(o => `<tr><td>${esc(o.ma)}</td><td>${esc(o.lop)}</td>${coBai.map(b => { const x = o.b[b.id]; return `<td>${!x ? "🔒" : x.r ? "✅ " + x.s : x.n ? "⏳ " + x.s : x.td + "%"}</td>`; }).join("")}</tr>`).join("")}</table></div><p class="mo nho-chu">✅ sẵn sàng (điểm cao nhất) · ⏳ đã làm cổng nhưng chưa sẵn sàng · % tiến độ khi chưa làm cổng · 🔒 chưa mở.</p></div>`;
-    D.bai.forEach(b => {
-      const co = ds.filter(o => o.b[b.id]); if (!co.length) return;
+    coBai.forEach(b => {
+      const co = ds.filter(o => o.b[b.id]); if (!co.length) { s += `<div class="the"><b>Bài ${b.id}. ${esc(b.ten)}</b><p class="mo">Chưa có em nào mở bài này.</p></div>`; return; }
       const ss = co.filter(o => o.b[b.id].r).length, dem = {};
       co.forEach(o => o.b[b.id].w.forEach(id => dem[id] = (dem[id] || 0) + 1));
       const top = Object.entries(dem).sort((a, c) => c[1] - a[1]).slice(0, 5);
@@ -14748,19 +14805,20 @@ MAN.gv = () => {
       ${top.length ? `<details class="khong-in" style="margin-top:8px"><summary><b>🤖 Nhờ AI soạn 5 phút chốt kiến thức đầu tiết sau</b></summary>${oLoiNhac(nhacChot(b, co, top, hoi))}</details>` : ""}
       ${(() => { const ra = co.filter(o => o.b[b.id].pt && o.b[b.id].pt.ra).map(o => ({ ma: o.ma, r: o.b[b.id].pt.ra })); return ra.length ? `<details style="margin-top:8px" open><summary><b>✍️ Câu hỏi học sinh tự ra (${ra.length})</b></summary>${ra.map(o => `<div class="dk"><span class="chip">${esc(o.ma)}</span> ${esc(o.r.q)}<div class="nho-chu">✔️ ${esc(o.r.d)} · ✖ ${o.r.s.map(esc).join(" · ")}</div></div>`).join("")}<div class="khong-in"><b class="nho-chu">🤖 Nhờ AI phản biện các câu này:</b>${oLoiNhac(nhacPhanBien(b, ra))}</div></details>` : ""; })()}</div>`;
     });
-    s = phanTacDong(ds) + s;
+    s = phanTacDong(ds, ptChon.bai) + s;
     $("#kqgv").innerHTML = s;
     document.querySelectorAll("#kqgv td:first-child").forEach(td => { if (/^HS\d+$/.test(td.textContent)) td.innerHTML = veBai(td.textContent) + " " + td.textContent; });
   };
-  $("#locLop").onchange = e => { if (e.target.value) { kho.dangDay.lop = e.target.value; ghiKho(); return MAN.gv(); } $("#th").click(); };   // đổi lớp = đổi lớp đang dạy
-  if (Object.keys(kho.kq).length) setTimeout(() => $("#th").click(), 0);
+  $("#locLop").onchange = e => { ptChon.lop = e.target.value; if (ptChon.lop && ptChon.lop !== "*") { kho.dangDay.lop = ptChon.lop; ghiKho(); } ptTheoLop(); MAN.gv(true); };   // đổi lớp = đổi lớp đang dạy
+  $("#locBai").onchange = e => { ptChon.bai = +e.target.value || 0; ptChon.tuChon = !!ptChon.bai; if (ptChon.bai) { kho.dangDay.bai = ptChon.bai; ghiKho(); } MAN.gv(true); };   // đổi bài = đổi bài đang dạy
+  setTimeout(() => { if ($("#th")) $("#th").click(); }, 0);
   $("#csv").onclick = () => {
-    if (!ds.length) return bao("Cô bấm Tổng hợp trước");
+    if (!ds.length) return bao("Cô chọn lớp, bài rồi bấm Tổng hợp trước");
     const q = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
-    const coBai = D.bai.filter(b => ds.some(o => o.b[b.id]));
+    const coBai = D.bai.filter(b => b.id === ptChon.bai);
     const dong = [["Mã HS", "Lớp", ...KS.map((c, i) => "KS đầu " + (i + 1)), ...KS.map((c, i) => "KS cuối " + (i + 1)), ...coBai.flatMap(b => [`B${b.id} tiến độ %`, `B${b.id} điểm cao nhất`, `B${b.id} số lượt`, `B${b.id} điểm lượt đầu`, `B${b.id} sẵn sàng`, `B${b.id} tự tin`, `B${b.id} học được`, `B${b.id} băn khoăn`, `B${b.id} vận dụng`, `B${b.id} hỏi cô`])].map(q).join(",")];
     ds.forEach(o => dong.push([o.ma, o.lop, ...KS.map((c, i) => o.ks && o.ks.dau ? o.ks.dau.a[i] : ""), ...KS.map((c, i) => o.ks && o.ks.cuoi ? o.ks.cuoi.a[i] : ""), ...coBai.flatMap(b => { const x = o.b[b.id]; if (!x) return ["", "", "", "", "", "", "", "", "", ""]; const p = x.pt || {}; return [x.td, x.s, x.n, x.f, x.r ? "Có" : "Chưa", p.tt, p.hoc, p.bk, p.dung, p.hoi]; })].map(q).join(",")));
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + dong.join("\r\n")], { type: "text/csv;charset=utf-8" })); a.download = "Cong-san-sang-Tin10-tong-hop.csv"; a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + dong.join("\r\n")], { type: "text/csv;charset=utf-8" })); a.download = "Cong-san-sang-Tin10-Bai" + ptChon.bai + ".csv"; a.click();
   };
 };
 
@@ -14942,7 +15000,7 @@ function kiemMkHS(){
   const m = ma, h = hs(), l = h.lop, macDinh = bamMK(l, m, mkHS(l, m)), hb = h.mkBam || macDinh;
   hoiMK(l, m, hb).then(d => {
     if (!d || !d.ok || ma !== m || (d.co ? d.dung : hb === macDinh)) return;
-    ma = null; tatCa._lopCu = l; if (tatCa._mk) delete tatCa._mk[l + "|" + m]; ghi(); di("vao");
+    boFidHS(m); dongPhienHS(); ma = null; tatCa._lopCu = l; if (tatCa._mk) delete tatCa._mk[l + "|" + m]; ghi(); di("vao");
     alert("🔑 Mật khẩu của " + m + " vừa được cô đổi.\nEm đăng nhập lại bằng mật khẩu mới cô đưa trực tiếp. Tiến độ, tem của em vẫn giữ nguyên.");
   }).catch(() => {});
 }
@@ -14997,6 +15055,48 @@ async function vaoFaceID(){
   } catch (e) { bao("Chưa nhận diện được: " + loiFID(e) + ". Cô có thể nhập mã giáo viên."); }
 }
 function tatFaceID(){ try { localStorage.removeItem(KHOA_FID); } catch (e) {} bao("Đã tắt đăng nhập bằng Face ID / vân tay trên máy này"); MAN.gvLop(); }
+
+// ── HỌC SINH MỞ KHOÁ BẰNG ĐIỆN THOẠI (bản thử, tự chọn; cùng chuẩn WebAuthn với trang cô): không có ảnh, vân tay nào rời máy.
+// Bản thử chỉ hiện với lớp dùng thử 10GV1…; mở cho lớp thật thì sửa moKhoaHSChoPhep. Mã + mật khẩu luôn dùng được.
+const KHOA_FID_HS = KHOA_GV + "_fidhs", PHIEN_HS = KHOA_GV + "_phienhs";
+const moKhoaHSChoPhep = l => laLopThu(l);
+const dsFidHS = () => { try { return JSON.parse(localStorage.getItem(KHOA_FID_HS) || "{}") || {}; } catch (e) { return {}; } };
+const fidHS = m => dsFidHS()[m] || null;
+const boFidHS = m => { try { const d = dsFidHS(); delete d[m]; localStorage.setItem(KHOA_FID_HS, JSON.stringify(d)); } catch (e) {} };
+const moPhienHS = m => { try { sessionStorage.setItem(PHIEN_HS, m); } catch (e) {} };
+const dongPhienHS = () => { try { sessionStorage.removeItem(PHIEN_HS); } catch (e) {} };
+const phienHSMo = m => { try { return sessionStorage.getItem(PHIEN_HS) === m; } catch (e) { return false; } };
+const loiFidHS = e => e && e.name === "NotAllowedError" ? "em đã huỷ hoặc chưa mở khoá xong" : "máy hoặc trình duyệt chưa hỗ trợ — em dùng mã và mật khẩu nhé";
+async function batFidHS(){
+  const m = ma, h = hs();
+  try {
+    if (!window.PublicKeyCredential || !(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())) throw new Error("khong ho tro");
+    const c = await navigator.credentials.create({ publicKey: { challenge: ngauNhien(32), rp: { name: "Cổng sẵn sàng" },
+      user: { id: ngauNhien(16), name: m, displayName: m + " · " + h.lop },
+      pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" }, timeout: 60000 } });
+    const d = dsFidHS(); d[m] = { id: b64(c.rawId), lop: h.lop }; localStorage.setItem(KHOA_FID_HS, JSON.stringify(d));
+    moPhienHS(m); bao("🔐 Đã bật mở khoá nhanh trên máy này"); di("nha");
+  } catch (e) { bao("Chưa bật được: " + loiFidHS(e)); }
+}
+function tatFidHS(){ boFidHS(ma); bao("Đã tắt mở khoá nhanh. Lần sau em vẫn vào được bằng mã và mật khẩu"); di("nha"); }
+async function vaoFidHS(m){
+  const f = fidHS(m); if (!f) return;
+  try {
+    await navigator.credentials.get({ publicKey: { challenge: ngauNhien(32), allowCredentials: [{ type: "public-key", id: tuB64(f.id) }], userVerification: "required", timeout: 60000 } });
+  } catch (e) { return bao("Chưa mở khoá được: " + loiFidHS(e) + "."); }
+  kiemLopHS(f.lop, k => {
+    ma = m; tatCa._lopCu = f.lop; hs().lop = f.lop; hs().mkOk = 1; if (k.han) { hs().hanThu = k.han; hs().lopThu = k.thu; } ghi();
+    moPhienHS(m); vaoNha(); layTienDoSheet(false); kiemMkHS();
+  });
+}
+// thẻ ở trang chủ: bật / tắt; bản trong Google Sites, tệp HTML rời bị trình duyệt chặn nên chỉ dẫn sang bản app chính
+function theFidHS(){
+  if (!ma || laThu() || !moKhoaHSChoPhep(hs().lop)) return "";
+  const giai = '<p class="mo nho-chu">Mở khoá như mở điện thoại: khuôn mặt, vân tay hoặc mã màn hình. Điện thoại tự kiểm tra, app không nhận ảnh hay vân tay của em. Chỉ bật trên máy của riêng em, máy dùng chung thì đừng bật. Không bật vẫn học bình thường.</p>';
+  if (banPhu()) return D.trangApp ? `<div class="the"><b>🔐 Mở khoá nhanh</b> <span class="chip">Bản thử</span>${giai}<a class="nut phu nho" style="text-decoration:none;display:inline-block" href="${esc(D.trangApp)}" target="_blank" rel="noopener">Mở bản app chính để bật</a></div>` : "";
+  return `<div class="the"><b>🔐 Mở khoá nhanh</b> <span class="chip">Bản thử</span>${giai}${fidHS(ma) ? '<span class="chip xanh">✅ Đang bật trên máy này</span> <button class="nut phu nho" id="tatFidHS">Tắt</button>' : '<button class="nut nho" id="batFidHS">Bật trên máy này</button>'}</div>`;
+}
 
 // lớp cô dạy có sẵn trong app (nguon/lien_ket.json → lopCo): máy nào, bản nào (GitHub, Google Sites) mở ra cũng đủ lớp + sĩ số.
 // Cô xoá lớp nào thì app nhớ, không tự thêm lại; cô sửa sĩ số trên máy thì giữ số của cô.
@@ -15172,7 +15272,7 @@ MAN.gvViec = () => {
   const iso = new Date(mac.getTime() - mac.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   app.innerHTML = dau("📣 Giao việc", "Chọn lớp, bài, hạn hoàn thành Cổng sẵn sàng") + `
   <div class="the">${ls.length ? `<div class="hang" style="justify-content:space-between"><b>Lớp</b><span class="hang" style="gap:6px"><button class="nut phu nho" id="boChon">☐ Bỏ chọn tất cả</button><button class="nut phu nho" id="chonHet">☑ Chọn tất cả</button></span></div><div class="hang" style="margin:6px 0 10px">${ls.map(l => `<label class="chip" style="padding:8px 12px;font-size:15px"><input type="checkbox" data-gl="${esc(l)}" checked> ${esc(l)}</label>`).join("")}</div><p class="mo nho-chu" id="demLop" style="margin:-4px 0 8px"></p>` : '<div class="loi">Cô thêm lớp ở mục 🏫 Lớp trước nhé.</div>'}
-  <label class="nh" for="gBai">Bài</label><select id="gBai">${D.bai.map(b => `<option value="${b.id}">Bài ${b.id}. ${esc(b.ten)}</option>`).join("")}</select>
+  <label class="nh" for="gBai">Bài</label><select id="gBai"><option value="">— Chọn bài cần giao —</option>${D.bai.map(b => `<option value="${b.id}">Bài ${b.id}. ${esc(b.ten)}</option>`).join("")}</select>
   <label class="nh" for="gHan">Hạn hoàn thành</label><input type="datetime-local" id="gHan" value="${iso}">
   <label class="nh" for="gNote">Lời dặn thêm (không bắt buộc)</label><input type="text" id="gNote" maxlength="120" placeholder="VD: làm xong nhớ phản tư rồi nộp QR cho cô">
   ${D.guiVe ? '<label class="hang" style="gap:8px;margin-top:10px"><input type="checkbox" id="gDang" checked style="width:20px;height:20px"> Đăng luôn vào mục 🔔 Thông báo trên app của các em</label>' : ""}
@@ -15185,6 +15285,7 @@ MAN.gvViec = () => {
   if ($("#boChon")) { $("#boChon").onclick = () => chonLop(false); $("#chonHet").onclick = () => chonLop(true); }
   document.querySelectorAll("[data-gl]").forEach(x => x.onchange = demLop); demLop();
   if ($("#giao")) $("#giao").onclick = () => {
+    if (!$("#gBai").value) { $("#gBai").focus(); return bao("Cô chọn bài cần giao trước nhé"); }
     const lop = [...document.querySelectorAll("[data-gl]")].filter(c => c.checked).map(c => c.dataset.gl), han = new Date($("#gHan").value).getTime();
     if (!lop.length) return bao("Cô chọn ít nhất 1 lớp"); if (!han) return bao("Cô chọn hạn hoàn thành");
     const v = { id: "v" + Date.now(), lop, bai: +$("#gBai").value, han, note: $("#gNote").value.trim(), tao: Date.now() };
@@ -15406,6 +15507,7 @@ function hienNopQR(idBai, hop){
 
 dayDi();
 if (ma && D.matKhau && !laThu() && !hs().mkOk) { tatCa._lopCu = hs().lop; ma = null; ghi(); }
+if (ma && !laThu() && fidHS(ma) && !phienHSMo(ma)) { tatCa._lopCu = hs().lop; ma = null; ghi(); }   // đã bật mở khoá nhanh: mở app lại phải mở khoá
 di(ma ? "nha" : laCo ? (kho.viec.length ? "gvTheoDoi" : "gvLop") : "vao");
 kiemThu(); kiemHanHS(); kiemMkHS(); layTienDoSheet(false); window.addEventListener("online", () => { kiemThu(); kiemHanHS(); kiemMkHS(); });
 })();
