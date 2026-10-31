@@ -13287,8 +13287,8 @@ const ganLui = f => { const b = $("#lui"); if (b) b.onclick = f; };
 const MAN = {};
 
 // ───── VÀO HỌC
-// chỉ hiện ở bản cài trên GitHub: nói rõ bản này tiếp tục được cập nhật sau ngày nộp, bản trước đó vẫn ở Google Sites
-const tbBan = () => window.PWA && D.linkCu ? `<p class="mo nho-chu" style="text-align:center;margin:8px 0">📌 Đây là bản đang tiếp tục được hoàn thiện sau ngày 30/10/2026. Bản trước đó vẫn được giữ tại <a href="${esc(D.linkCu)}" target="_blank" rel="noopener">Google Sites</a>.</p>` : "";
+// chỉ hiện ở bản cài trên GitHub: nói rõ bản này tiếp tục được cập nhật sau ngày nộp
+const tbBan = () => window.PWA && D.linkCu ? `<p class="mo nho-chu" style="text-align:center;margin:8px 0">📌 Đây là bản đang tiếp tục được hoàn thiện sau ngày 30/10/2026.</p>` : "";
 MAN.vao = (vai) => {
   vai = vai || (fidCo() || /[?&]vai=gv(&|$)/.test(location.search) ? "gv" : "hs");
   app.innerHTML = `<div class="mo-dau"><div class="logo">🚪</div><h1>Cổng sẵn sàng</h1><div class="mo">Tin học 10 · Kết nối tri thức · 34 bài</div></div>${tbBan()}

@@ -1,5 +1,5 @@
-// Cổng sẵn sàng — lưu app trên máy để mở được khi mất mạng. Bản: 20261101-0055
-const BAN = "css-20261101-0055", TEP = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
+// Cổng sẵn sàng — lưu app trên máy để mở được khi mất mạng. Bản: 20261101-0128
+const BAN = "css-20261101-0128", TEP = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(BAN).then(c => c.addAll(TEP))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== BAN).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener("fetch", e => {
