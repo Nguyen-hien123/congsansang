@@ -13753,15 +13753,18 @@ function buocPhanTu(b, nd){
   <input type="text" id="raQ" maxlength="200" placeholder="Câu hỏi" value="${esc(p.ra ? p.ra.q : "")}" style="margin-bottom:6px">
   <input type="text" id="raD" maxlength="90" placeholder="Đáp án ĐÚNG" value="${esc(p.ra ? p.ra.d : "")}" style="margin-bottom:6px;border-color:#86efac">
   ${[0, 1, 2].map(i => `<input type="text" id="raS${i}" maxlength="90" placeholder="Phương án sai ${i + 1}" value="${esc(p.ra ? p.ra.s[i] : "")}" style="margin-bottom:6px">`).join("")}</details>
-  <p></p><button class="nut rong" id="luu">Lưu phản tư</button><div id="kqpt"></div></div>`;
-  let tt = p.tt;
+  <p></p>${x.pt ? `<p class="mo nho-chu">✅ Em đã gửi phản tư bài này cho cô. Mỗi bài chỉ gửi 1 lần.</p><button class="nut phu rong" id="luu">✅ Đã gửi phản tư</button>` : '<button class="nut rong" id="luu">Lưu phản tư</button>'}<div id="kqpt"></div></div>`;
+  let tt = p.tt, lanBam = 0;
   nd.querySelectorAll("#sao button").forEach(bt => bt.onclick = () => { tt = +bt.dataset.s; nd.querySelectorAll("#sao button").forEach(z => z.classList.toggle("bat", +z.dataset.s <= tt)); });
+  // mỗi bài chỉ gửi phản tư 1 lần: đã gửi (kể cả lấy lại từ Sheet) thì bấm nữa chỉ nhắc, không gửi lại
   $("#luu").onclick = () => {
+    if (x.pt) { lanBam++; return bao(lanBam > 2 ? `⚠️ Em đã bấm ${lanBam + 1} lần. Phản tư Bài ${b.id} đã gửi cho cô rồi, app không gửi thêm nữa.` : `⚠️ Em đã gửi phản tư Bài ${b.id} rồi. Mỗi bài chỉ gửi 1 lần nhé!`); }
     const v = id => $("#" + id).value.trim();
     if (!tt) return bao("Em chọn số sao tự tin nhé");
     if (v("hoc").length < 5 || v("dung").length < 5) return bao("Em viết thêm ở mục 1 và mục 3 nhé");
-    const ptMoi = !x.pt; x.pt = { tt, hoc: v("hoc"), bk: v("bk"), dung: v("dung"), hoi: v("hoi") }; if (ptMoi) congXP("phantu", XP.phantu);
-    if (v("raQ") && v("raD")) { const sai = [0, 1, 2].map(i => v("raS" + i)); if (sai.some(z => !z)) return bao("Câu tự ra cần đủ 3 phương án sai nhé"); x.pt.ra = { q: v("raQ"), d: v("raD"), s: sai }; }
+    let ra = null; if (v("raQ") && v("raD")) { const sai = [0, 1, 2].map(i => v("raS" + i)); if (sai.some(z => !z)) return bao("Câu tự ra cần đủ 3 phương án sai nhé"); ra = { q: v("raQ"), d: v("raD"), s: sai }; }
+    x.pt = { tt, hoc: v("hoc"), bk: v("bk"), dung: v("dung"), hoi: v("hoi") }; if (ra) x.pt.ra = ra; congXP("phantu", XP.phantu);
+    const nut = $("#luu"); nut.textContent = "✅ Đã gửi phản tư"; nut.classList.add("phu");
     ghi(); ghiNgay(b.id);
     { const r = x.pt.ra; guiVe("Phản tư", [ngayGio(), ma, hs().lop, b.id, b.ten, x.cao, x.dau == null ? "" : x.dau, sanSang(b.id) ? "Có" : "Chưa", tt, x.pt.hoc, x.pt.bk, x.pt.dung, x.pt.hoi, r ? r.q : "", r ? r.d : "", r ? r.s.join(" | ") : ""]); }
     $("#kqpt").innerHTML = sanSang(b.id) ? `<div class="ok-hop">✅ <b>Em đã SẴN SÀNG cho buổi học kế tiếp!</b> Hộ chiếu của em vừa được đóng tem Bài ${b.id}. Kết quả đã tự gửi về cô. Em có thể vào 🏅 Minh chứng để lưu ảnh minh chứng buổi học.</div><p></p><div class="hang"><button class="nut" id="xemHC">🛂 Xem hộ chiếu</button><button class="nut phu" id="ve">Về danh sách bài</button></div>` : `<div class="loi">Đã lưu phản tư. Em cần đạt từ ${D.nguong}/10 ở Cổng kiểm tra để được tính là sẵn sàng.</div>`;
