@@ -13317,7 +13317,7 @@ MAN.vao = (vai) => {
       kiemMK(l, m, p, hb => kiemLopHS(l, k => {
         const moi = !tatCa[m]; ma = m; tatCa._lopCu = l; hs().lop = l; hs().mkOk = 1; if (hb) hs().mkBam = hb; if (k.han) { hs().hanThu = k.han; hs().lopThu = k.thu; } ghi(); moPhienHS(m);
         if (k.thu) bao(`🧪 Lớp dùng thử — em dùng app đến hết ngày ${ngayHan(k.han)}`);
-        if (moi && D.guiVe) return timTienDo(ok => { if (!ok) { vaoNha(); baoDaVao(); } });
+        if (moi && D.guiVe) return timTienDo(ok => { if (!ok) { vaoNha(); if (ok === false) layTienDoSheet(false); else baoDaVao(); } });
         vaoNha(); layTienDoSheet(false);
       }));
     };
@@ -13897,9 +13897,9 @@ function timTienDo(xong){
   const h = hs(); let daXong = false; const ket = ok => { if (!daXong) { daXong = true; xong(ok); } };
   if (!navigator.onLine) return ket(false);
   app.innerHTML = dau("🔄 Đang tìm tiến độ cũ của em…", esc(ma) + " · " + esc(h.lop)) + '<div class="the">Chờ vài giây nhé.</div>';
-  setTimeout(() => ket(false), 8000);
+  setTimeout(() => ket(false), 15000);   // ket(false) = chưa biết (chậm, lỗi mạng); ket(0) = Sheet trả lời là chưa có
   fetch(D.guiVe + (D.guiVe.includes("?") ? "&" : "?") + "kp=1&lop=" + encodeURIComponent(h.lop) + "&ma=" + encodeURIComponent(ma) + thuQ()).then(r => r.json()).then(d => {
-    if (daXong) return; if (!d || !d.ma) return ket(false);
+    if (daXong) return; if (!d || !d.ma) return ket(d && d.ok ? 0 : false);
     let o; try { o = giaiMa(d.ma); } catch (e) { return ket(false); }
     if (o.ma !== ma) return ket(false);
     const soBai = Object.keys(o.b || {}).length, soTem = Object.values(o.b || {}).filter(y => y.r).length;
@@ -13980,7 +13980,7 @@ function kiemTruDB(){   // tự trừ điểm khi quá hạn mà chưa làm gói
   if (!ma || laThu() || !D.db) return;
   const h = hs(); let doi = false;
   // một lần: bài trước đây đã bị trừ mà chưa làm thì hoàn 5 ⭐ và mở lại hạn mới, để cả lớp cùng tính từ ngày cập nhật
-  if (!h.dbMoc) { h.dbMoc = 1; doi = true; const xp = xpCua(h); D.bai.forEach(b => { const x = h.bai[b.id]; if (!x || !x.dbTru || x.dbL) return; x.dbTru = 0; xp.tong += DB_TRU_CU; xp.n.dbTru = Math.max(0, (xp.n.dbTru || 0) - 1); xp.d.dbTru = Math.min(0, (xp.d.dbTru || 0) + DB_TRU_CU); }); }
+  if (!h.dbMoc) { h.dbMoc = 1; ghi(); const xp = xpCua(h); D.bai.forEach(b => { const x = h.bai[b.id]; if (!x || !x.dbTru || x.dbL) return; doi = true; x.dbTru = 0; xp.tong += DB_TRU_CU; xp.n.dbTru = Math.max(0, (xp.n.dbTru || 0) - 1); xp.d.dbTru = Math.min(0, (xp.d.dbTru || 0) + DB_TRU_CU); }); }
   D.bai.forEach(b => { const x = h.bai[b.id]; if (!x || !x.mo || !D.db[b.id]) return;
     if (!x.moT) { x.moT = Date.now(); doi = true; return; }
     if (!x.dbL && !x.dbTru && Date.now() > dbHan(x)) { x.dbTru = 1; truXP("dbTru", XP.dbTru); doi = true; bao(`⏳ Em bỏ lỡ gói đặc biệt Bài ${b.id} — trừ ${XP.dbTru} ⭐. Em vẫn vào khám phá bức tranh được nhé!`); } });
