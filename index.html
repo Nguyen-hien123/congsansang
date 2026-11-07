@@ -13176,8 +13176,8 @@ const thieu = id => { const x = bh(id), t = []; if (x.cao < D.nguong) t.push(`đ
 // ───── ĐIỂM TÍCH LUỸ TÀI KHOẢN: cộng dồn mọi hoạt động học tập, luyện tập, thách đấu
 // Mức điểm tính cho cả năm (34 bài): em chăm đều ≈ 260 ⭐/bài + thách đấu hằng tuần → chạm 10 000 ⭐ khoảng cuối năm;
 // em rất chăm, làm tối đa mọi mục → khoảng 13 000 ⭐. Muốn chỉnh độ khó chỉ cần sửa bảng XP dưới đây.
-const XP = { khongHopTac: 8, congNhan: 4, congLuot: 4, tem: 80, phantu: 30, on: 5, onToiDa: 6, ai: 10, aiToiDa: 4, tdChia: 20, tdTuan: 50, ks: 20, dbDu: 50, dbKha: 30, dbTru: 30, dbNgay: 7, ltDat: 5, ltNop: 2, ltTru: 5, ltNgay: 7, ttDat: 10 };
-const XP_LOAI = { tru: ["🤝 Không hợp tác (cô trừ)", `−${XP.khongHopTac} mỗi lần`], hoan: ["↩️ Cô hoàn điểm", `+${XP.khongHopTac}`], db: ["🎨 Gói đặc biệt", `+${XP.dbDu} đúng 12/12 · +${XP.dbKha} đúng 7–11`], dbTru: ["⏳ Bỏ lỡ gói đặc biệt", `−${XP.dbTru} mỗi bài`], cong: ["🚪 Luyện tập Cổng", `điểm × ${XP.congNhan} (4 lượt đầu mỗi bài)`], tem: ["🛂 Tem hộ chiếu", `+${XP.tem}`], phantu: ["🪞 Phản tư", `+${XP.phantu} mỗi bài`], on: ["📕 Ôn câu sai làm đúng", `+${XP.on} (tối đa ${XP.onToiDa} câu/bài)`], ai: ["🤖 Hỏi AI và tự đánh giá", `+${XP.ai} (tối đa ${XP.aiToiDa} câu/bài)`], td: ["⚔️ Thách đấu", `điểm ÷ ${XP.tdChia} (tối đa ${XP.tdTuan}/tuần)`], ks: ["📋 Khảo sát", `+${XP.ks}`], lt: ["💻 Bài lập trình", `+${XP.ltDat} đạt hết kiểm thử · +${XP.ltNop} nộp khi chưa kiểm thử`], ltTru: ["⏳ Không nộp bài lập trình", `−${XP.ltTru} mỗi nhiệm vụ`], tt: ["⚔️ Thử thách lập trình", `+${XP.ttDat} mỗi bài`] };
+const XP = { khongHopTac: 8, congNhan: 4, congLuot: 4, tem: 80, phantu: 30, on: 5, onToiDa: 6, ai: 10, aiToiDa: 4, tdChia: 20, tdTuan: 50, ks: 20, dbDu: 50, dbKha: 30, dbTru: 30, dbNgay: 7, ltDat: 5, ltNop: 2, ltTru: 5, ltNgay: 7, ttDat: 10, thTru: 30 };
+const XP_LOAI = { tru: ["🤝 Không hợp tác (cô trừ)", `−${XP.khongHopTac} mỗi lần`], hoan: ["↩️ Cô hoàn điểm", `+${XP.khongHopTac}`], db: ["🎨 Gói đặc biệt", `+${XP.dbDu} đúng 12/12 · +${XP.dbKha} đúng 7–11`], dbTru: ["⏳ Bỏ lỡ gói đặc biệt", `−${XP.dbTru} mỗi bài`], cong: ["🚪 Luyện tập Cổng", `điểm × ${XP.congNhan} (4 lượt đầu mỗi bài)`], tem: ["🛂 Tem hộ chiếu", `+${XP.tem}`], phantu: ["🪞 Phản tư", `+${XP.phantu} mỗi bài`], on: ["📕 Ôn câu sai làm đúng", `+${XP.on} (tối đa ${XP.onToiDa} câu/bài)`], ai: ["🤖 Hỏi AI và tự đánh giá", `+${XP.ai} (tối đa ${XP.aiToiDa} câu/bài)`], td: ["⚔️ Thách đấu", `điểm ÷ ${XP.tdChia} (tối đa ${XP.tdTuan}/tuần)`], ks: ["📋 Khảo sát", `+${XP.ks}`], lt: ["💻 Bài lập trình", `+${XP.ltDat} đạt hết kiểm thử · +${XP.ltNop} nộp khi chưa kiểm thử`], ltTru: ["⏳ Không nộp bài lập trình", `−${XP.ltTru} mỗi nhiệm vụ`], tt: ["⚔️ Thử thách lập trình", `+${XP.ttDat} mỗi bài`], thTru: ["🖼️ Không nộp ảnh thực hành (cô trừ)", `−${XP.thTru} mỗi bài`] };
 const CAP_XP = [[0, "Tân binh số"], [500, "Học viên chăm chỉ"], [1500, "Chiến binh số"], [3000, "Chuyên gia nhí"], [6000, "Bậc thầy Tin học"], [10000, "Huyền thoại Cổng sẵn sàng"]];
 function xpCua(h){
   if (!h.xp || h.xp.v !== 2) {   // lần đầu (hoặc bản tính cũ): tính bù từ tiến độ em đã có theo mức điểm mới
@@ -13208,6 +13208,7 @@ const cachTinhXP = () => `<details class="cach-xp"><summary><b>📖 Cách kiếm
   <tr><td>⚔️ Thách đấu</td><td>điểm thách đấu ÷ ${XP.tdChia} (tối đa ${XP.tdTuan}/tuần)</td><td>Đúng nhanh, đúng liên tiếp = nhiều điểm</td></tr>
   <tr><td>🎨 Gói 5 phút đặc biệt (mỗi bài)</td><td>đúng 12/12: <b>+${XP.dbDu}</b> · đúng 7–11: +${XP.dbKha} · <b>không làm trong ${XP.dbNgay} ngày: −${XP.dbTru}</b></td><td>Chỉ lần làm đầu tiên tính điểm — mỗi bài có một bức tranh bất ngờ!</td></tr>
   <tr><td>💻 Viết và chạy bài lập trình (mỗi nhiệm vụ)</td><td>kiểm thử đạt hết: <b>+${XP.ltDat}</b> · nộp khi chưa kiểm thử: +${XP.ltNop} · <b>không nộp trong ${XP.ltNgay} ngày kể từ khi mở bài: −${XP.ltTru}</b></td><td>Chạy thử trong Python trên máy trước, rồi bấm 🧪 Kiểm thử, mỗi nhiệm vụ tính điểm một lần</td></tr>
+  <tr><td>🖼️ Nộp ảnh thực hành (khi cô yêu cầu)</td><td><b>hết giờ cô thu mà chưa nộp: −${XP.thTru}</b> mỗi bài (em vắng không bị trừ)</td><td>Nộp ngay trong giờ học ở 🖼️ Nộp thực hành, cô sẽ báo giờ thu của lớp</td></tr>
   <tr><td>⚔️ Thử thách lập trình (Đại sứ Code, Chiến binh Bug)</td><td>kiểm thử đạt hết: <b>+${XP.ttDat}</b> mỗi bài</td><td>Không bắt buộc, không bị trừ điểm</td></tr>
   ${KS_BAT ? `<tr><td>📋 Khảo sát đầu, cuối</td><td>+${XP.ks} mỗi lần</td><td>Trả lời thật lòng</td></tr>` : ""}</table>
   <p class="nho-chu" style="margin:8px 0 2px"><b>Các cấp:</b> ${CAP_XP.map((c, k) => `${k + 1}. ${c[1]} (${c[0].toLocaleString("vi-VN")}⭐)`).join(" → ")}</p>
@@ -15439,7 +15440,7 @@ function dangTB(ds){
 // tin "Trừ điểm" / "Hoàn điểm" của cô: app tự trừ / cộng lại điểm tích luỹ một lần cho mỗi tin
 function apTruDiem(h){
   h.daTru = h.daTru || []; let doi = 0;
-  (h.tb || []).slice().reverse().forEach(t => { if ((t.loai === "Trừ điểm" || t.loai === "Hoàn điểm") && !h.daTru.includes(t.id)) { h.daTru.push(t.id); doi = 1; t.loai === "Trừ điểm" ? truXP("tru", XP.khongHopTac) : congXP("hoan", XP.khongHopTac); } });
+  (h.tb || []).slice().reverse().forEach(t => { if ((t.loai === "Trừ điểm" || t.loai === "Hoàn điểm" || t.loai === "Trừ điểm TH") && !h.daTru.includes(t.id)) { h.daTru.push(t.id); doi = 1; t.loai === "Trừ điểm TH" ? truXP("thTru", XP.thTru) : t.loai === "Trừ điểm" ? truXP("tru", XP.khongHopTac) : congXP("hoan", XP.khongHopTac); } });
   if (doi) { h.daTru = h.daTru.slice(-300); ghi(); }
 }
 let dangLayTB = false;
@@ -15455,7 +15456,7 @@ function layTB(veLai){
 }
 const chuaDoc = () => { if (!ma) return []; const h = hs(); return (h.tb || []).filter(t => !(h.daDoc || []).includes(t.id)); };
 function capNhatTB(){ const e = $("#demTB"); if (!e) return; const n = chuaDoc().length; e.innerHTML = n ? '<span class="dem">' + n + "</span>" : ""; }
-const IC_TB = { "Giao việc": "📣", "Nhắc riêng": "🔔", "Nhắc chung": "📢", "Trừ điểm": "⚠️", "Hoàn điểm": "↩️", "Nhận xét tháng": "📝" };
+const IC_TB = { "Giao việc": "📣", "Nhắc riêng": "🔔", "Nhắc chung": "📢", "Trừ điểm": "⚠️", "Trừ điểm TH": "🖼️", "Hoàn điểm": "↩️", "Nhận xét tháng": "📝" };
 function theTB(t, moi){
   const b = t.bai && D.bai.find(z => z.id === +t.bai);
   return `<div class="the tb ${moi ? "moi" : ""}"><div class="hang" style="justify-content:space-between"><b>${IC_TB[t.loai] || "🔔"} ${esc(t.loai)}${t.ma === "*" ? " · cả lớp" : " · riêng em"}</b><span class="mo nho-chu">${ngayVN(t.t)}</span></div>
@@ -16196,7 +16197,7 @@ function theThuTH(x){
   return `<div style="margin-top:12px;border-top:2px dashed var(--vien);padding-top:10px"><b>🖼️ Ảnh thực hành</b>
   <div class="tk-luoi"><div class="tk-o" style="--m:#16a34a"><div class="tk-so">${dung.length}</div><div class="tk-ten">✅ Đã nộp đúng giờ</div></div><div class="tk-o" style="--m:#d97706"><div class="tk-so">${muon.length}</div><div class="tk-ten">⏰ Nộp sau giờ thu</div></div><div class="tk-o" style="--m:#dc2626"><div class="tk-so">${chua.length}</div><div class="tk-ten">❌ Chưa nộp</div><div class="mo nho-chu">không tính em vắng</div></div></div>
   <div class="th-luoi">${ro.map(oAnh).join("")}</div>
-  ${chua.length ? `<div class="hang" style="margin-top:8px"><button class="nut phu nho" data-thnhac="${x.id}">📢 Nhắc ${chua.length} em chưa nộp</button></div>` : ""}
+  ${chua.length ? `<div class="hang" style="margin-top:8px"><button class="nut phu nho" data-thnhac="${x.id}">📢 Nhắc ${chua.length} em chưa nộp</button>${chua.filter(m => !(x.daTru30 || []).includes(m)).length ? `<button class="nut nho" style="background:#b91c1c" data-thtru30="${x.id}">⚠️ Trừ ${XP.thTru} ⭐ ${chua.filter(m => !(x.daTru30 || []).includes(m)).length} em chưa nộp</button>` : '<span class="chip">đã trừ các em chưa nộp</span>'}</div><p class="mo nho-chu" style="margin:4px 0 0">Không tính em vắng. Cô bấm trừ khi đã hết giờ nộp của lớp; mỗi em chỉ bị trừ một lần cho bài này.</p>` : ""}
   ${muon.length ? `<div class="the" style="margin-top:8px;background:#fffbeb"><b>⏰ Nộp sau giờ thu · trừ ${XP.khongHopTac} ⭐</b><p class="mo nho-chu">Em bấm nộp trước giờ thu mà mạng chậm thì app để trống ô, cô xem rồi quyết. Cô bỏ tích em nào không trừ.</p>${muon.map(m => daTru.includes(m) ? `<div class="dk nho-chu"><b>${esc(m)}</b> · nhận lúc ${nhanGio(tg[m].t0)} · <span class="chip">đã trừ</span></div>` : `<label class="dk nho-chu" style="display:block"><input type="checkbox" data-thtru="${esc(m)}" ${tg[m].bam > x.den ? "checked" : ""}> <b>${esc(m)}</b> · em bấm lúc ${nhanGio(tg[m].bam)} · app nhận lúc ${nhanGio(tg[m].t0)}</label>`).join("")}${muon.some(m => !daTru.includes(m)) ? `<button class="nut do nho" style="margin-top:6px" data-thtrunut="${x.id}">Trừ ${XP.khongHopTac} ⭐ các em đã tích</button>` : ""}</div>` : ""}</div>`;
 }
 // xem ảnh to, dùng mũi tên sang em kế tiếp
@@ -16216,7 +16217,18 @@ function xemAnhTH(x, m){
   }).catch(() => { const tin = $("#thLonTin"); if (tin) tin.textContent = "Chưa tải được ảnh rõ, cô kiểm tra mạng."; });
 }
 function xuThuTH(el){
-  const x = (kho.thuBai || []).find(z => z.id === (el.dataset.thx || el.dataset.thnhac || el.dataset.thtrunut)); if (!x) return;
+  const x = (kho.thuBai || []).find(z => z.id === (el.dataset.thx || el.dataset.thnhac || el.dataset.thtrunut || el.dataset.thtru30)); if (!x) return;
+  if (el.dataset.thtru30) {
+    const vg = new Set(x.vang || []), ds = (x.ro || []).filter(m => !(x.thTg || {})[m] && !vg.has(m) && !(x.daTru30 || []).includes(m));
+    if (!ds.length) return bao("Không còn em nào chưa nộp cần trừ");
+    if (!confirm(`Trừ ${XP.thTru} ⭐ điểm tích luỹ của ${ds.length} em chưa nộp ảnh thực hành Bài ${x.bai} (không tính em vắng): ${ds.join(", ")}?`)) return;
+    const nd = `🖼️ Em chưa nộp ảnh thực hành Bài ${x.bai} trong giờ cô thu: −${XP.thTru} ⭐ điểm tích luỹ. Em vẫn nộp được để cô xem.`;
+    return dangTB(ds.map(m => ({ lop: x.lop, ma: m, loai: "Trừ điểm TH", nd, bai: x.bai }))).then(ok => {
+      if (!ok) return;
+      x.daTru30 = [...(x.daTru30 || []), ...ds];
+      (kho.truDiem = kho.truDiem || []).push({ id: "tru" + Date.now(), t: Date.now(), lop: x.lop, bai: x.bai, ai: "Không nộp ảnh thực hành", ds, ly: "chưa nộp ảnh thực hành" }); kho.truDiem = kho.truDiem.slice(-300); ghiKho(); veThuDS();
+    });
+  }
   const b = D.bai.find(z => z.id === x.bai);
   if (el.dataset.thxem) return xemAnhTH(x, el.dataset.thxem);
   if (el.dataset.thmay) {
@@ -16294,7 +16306,7 @@ function ganThuBai(){
   $("#thuNgay").onclick = () => tao(Date.now());
   $("#thuDS").onclick = e => {
     const el = e.target.closest("button"); if (!el) return;
-    if (el.dataset.thxem || el.dataset.thmay || el.dataset.thnhac || el.dataset.thtrunut) return xuThuTH(el);
+    if (el.dataset.thxem || el.dataset.thmay || el.dataset.thnhac || el.dataset.thtrunut || el.dataset.thtru30) return xuThuTH(el);
     const ds = kho.thuBai || [], x = ds.find(z => z.id === (el.dataset.thumoi || el.dataset.thuhuy || el.dataset.thungay)); if (!x) return;
     if (el.dataset.thumoi) { bao("Đang cập nhật…"); return layThuBai(x); }
     if (el.dataset.thungay) { x.den = Date.now(); ghiKho(); veThuDS(); return kiemGioThu(); }
