@@ -14968,6 +14968,28 @@ function veThangHS(){
       if (loiB(m, b)) n.push(`<b style="color:var(--do)">⚠️${loiB(m, b)}</b>`);
       return `<td style="white-space:nowrap;font-size:13px">${n.join(" ") || "·"}</td>`;
     };
+    // nhận xét tháng: 2 khen, 1 cần cố gắng, chỉ dựa trên số liệu thật của tháng (tem, gói đặc biệt, sàn, thực hành, lỗi)
+    const nxThang = m => {
+      const bs = baiCo(m), g = [...giao], ssB = g.filter(b => o(m, b).cao >= D.nguong && o(m, b).pt), chuaSS = g.filter(b => !ssB.includes(b)), nop = [...yc].filter(b => o(m, b).th).length, loi = Math.max(0, d.tru[m] || 0);
+      const db = bs.filter(b => o(m, b).db).length, san = bs.reduce((a, b) => a + (o(m, b).san || 0), 0), nhan = bs.reduce((a, b) => a + (o(m, b).nhan || 0), 0), coLam = bs.some(b => o(m, b).cao > 0);
+      const khen = [], che = [];
+      if (g.length && ssB.length === g.length) khen.push([9, `Đạt đủ tem sẵn sàng ${ssB.length}/${g.length} bài được giao, rất chuyên cần.`]);
+      else if (g.length && ssB.length / g.length >= .6) khen.push([7, `Đạt tem sẵn sàng ${ssB.length}/${g.length} bài được giao.`]);
+      if (db >= 3) khen.push([8, `Chăm làm gói đặc biệt (${db} bài), chịu khó thử sức với câu khó.`]); else if (db) khen.push([5, `Đã làm gói đặc biệt ${db} bài.`]);
+      if (san + nhan >= 3) khen.push([8, `Mạnh dạn trên sàn thách đấu: lên sàn ${san} lượt, nhận lời ${nhan} lượt.`]); else if (san + nhan) khen.push([5, `Đã dám lên sàn thách đấu (${san + nhan} lượt).`]);
+      if (yc.size && nop === yc.size) khen.push([6, `Nộp đủ ảnh thực hành ${nop}/${yc.size} bài.`]);
+      if (coLam && !loi) khen.push([4, "Giữ nề nếp tốt, không bị trừ điểm lần nào."]);
+      if (!khen.length && ssB.length) khen.push([3, `Đã có ${ssB.length} bài đạt tem sẵn sàng.`]);
+      if (chuaSS.length) che.push([9, `Còn ${chuaSS.length} bài chưa đạt tem (Bài ${chuaSS.slice(0, 4).join(", ")}${chuaSS.length > 4 ? "…" : ""}): em làm lại Cổng cho đạt từ ${D.nguong} điểm và viết phản tư.`]);
+      if (loi) che.push([8, `Bị trừ điểm ${loi} lần trong tháng: em chú ý nộp đúng hạn, giữ nề nếp.`]);
+      if (yc.size && nop < yc.size) che.push([7, `Còn ${yc.size - nop} bài chưa nộp ảnh thực hành.`]);
+      if (!db) che.push([5, "Chưa làm gói đặc biệt nào: em thử sức để nhận thêm ⭐ nhé."]);
+      if (!san && !nhan) che.push([4, "Chưa lên sàn thách đấu: em mạnh dạn thử một lượt với bạn."]);
+      if (!che.length) che.push([1, "Tháng tới em thử thách bản thân ở bài khó hơn và giúp bạn cùng tiến bộ."]);
+      const k2 = khen.sort((a, b) => b[0] - a[0]).slice(0, 2).map(z => z[1]), c1 = che.sort((a, b) => b[0] - a[0])[0][1];
+      return { k: k2, c: c1, du: k2.length === 2 };
+    };
+    const nxChu = m => { const n = nxThang(m); return `${m}: ${n.k.map(z => "👍 " + z).join(" ")}${n.du ? "" : " [chưa đủ số liệu để khen 2 ý — cô bổ sung]"} 💪 ${n.c}`; };
     const hang = m => {
       const bs = baiCo(m), ss = [...giao].filter(b => o(m, b).cao >= D.nguong && o(m, b).pt).length, nop = [...yc].filter(b => o(m, b).th).length, loi = Math.max(0, d.tru[m] || 0);
       const db = bs.filter(b => o(m, b).db).length, san = bs.reduce((a, b) => a + (o(m, b).san || 0), 0), nhan = bs.reduce((a, b) => a + (o(m, b).nhan || 0), 0), nen = loi ? "#fee2e2" : "#fff";
@@ -14975,7 +14997,12 @@ function veThangHS(){
     };
     v.innerHTML = `<div class="the"><b>📅 Thống kê ${esc(tenThang(th))} · lớp ${esc(lop)} · từng học sinh</b><p class="mo nho-chu">${giao.size} bài đã giao · ${yc.size} bài yêu cầu nộp thực hành. Hàng tô đỏ là em có lỗi trừ điểm, bấm số lỗi để xem chi tiết. Tích ô <b>Tước</b> thì em đó không có tên trong vinh danh tháng này, hạng các bạn dồn lên. Sẵn sàng, thực hành tính đến hết tháng; lỗi, gói đặc biệt, sàn, nhận lời tính trong tháng.</p>
     <p class="nho-chu" style="margin:4px 0"><b>Ở cột từng bài:</b> ✅ sẵn sàng · ⬜ chưa sẵn sàng · 🖼️ đã nộp thực hành · 🚫 chưa nộp thực hành · 🌸 đã làm gói đặc biệt · ⚔️ lượt lên sàn · 🤝 lượt nhận lời · ⚠️ số lỗi</p>
-    <div class="cuon"><table class="bang" style="margin-top:8px"><tr><th style="${coDinh(0, "#e6f4f2")}">Tước</th><th style="${coDinh(44, "#e6f4f2")}">Mã</th><th>Lỗi</th><th>Sẵn sàng / giao</th><th>TH nộp / yêu cầu</th><th>Gói ĐB</th><th>Lên sàn</th><th>Nhận lời</th>${cot.map(b => `<th>Bài ${b}</th>`).join("")}</tr>${ro.map(hang).join("")}</table></div>${d.truBai ? "" : '<p class="sai-hop nho-chu">Cô dán Apps Script bản mới thì cột từng bài mới hiện lỗi ⚠️ của từng bài. Cột Lỗi tổng vẫn đúng.</p>'}</div>`;
+    <div class="cuon"><table class="bang" style="margin-top:8px"><tr><th style="${coDinh(0, "#e6f4f2")}">Tước</th><th style="${coDinh(44, "#e6f4f2")}">Mã</th><th>Lỗi</th><th>Sẵn sàng / giao</th><th>TH nộp / yêu cầu</th><th>Gói ĐB</th><th>Lên sàn</th><th>Nhận lời</th>${cot.map(b => `<th>Bài ${b}</th>`).join("")}</tr>${ro.map(hang).join("")}</table></div>${d.truBai ? "" : '<p class="sai-hop nho-chu">Cô dán Apps Script bản mới thì cột từng bài mới hiện lỗi ⚠️ của từng bài. Cột Lỗi tổng vẫn đúng.</p>'}</div>
+    <div class="the"><div class="hang" style="justify-content:space-between"><b>📝 Nhận xét cuối ${esc(tenThang(th))} · lớp ${esc(lop)}</b><button type="button" class="nut phu nho" id="chepNX">📋 Sao chép tất cả</button></div>
+    <p class="mo nho-chu">✅ BẢN NHÁP — cô duyệt trước khi dùng. Mỗi em 2 ý khen 👍, 1 ý cần cố gắng 💪, app tự gợi ý từ số liệu tháng (tem sẵn sàng, gói đặc biệt, sàn thách đấu, thực hành, lỗi). Chỉ có mã học sinh, không có tên.</p>
+    ${ro.map(m => { const n = nxThang(m); return `<div class="dk" style="margin-top:6px"><div class="hang" style="justify-content:space-between"><b>${esc(m)}</b><button type="button" class="nut phu nho" data-chepnx="${esc(m)}">📋 Chép</button></div>${n.k.map(z => `<div class="nho-chu">👍 ${esc(z)}</div>`).join("")}${n.du ? "" : '<div class="nho-chu mo">👍 (chưa đủ số liệu để khen ý thứ hai — cô bổ sung)</div>'}<div class="nho-chu">💪 ${esc(n.c)}</div></div>`; }).join("")}</div>`;
+    $("#chepNX").onclick = () => saoChep(`Nhận xét ${tenThang(th)} · lớp ${lop}\n` + ro.map(nxChu).join("\n"));
+    v.querySelectorAll("[data-chepnx]").forEach(b => b.onclick = () => saoChep(nxChu(b.dataset.chepnx)));
     v.querySelectorAll("[data-xemten]").forEach(b => b.onclick = () => hienTen(lop, b.dataset.xemten));
     v.querySelectorAll("[data-xemloi]").forEach(b => b.onclick = () => { const h = [...v.querySelectorAll("[data-loict]")].find(r => r.dataset.loict === b.dataset.xemloi), mo = h.hidden; h.hidden = !mo; b.setAttribute("aria-expanded", mo ? "true" : "false"); b.textContent = b.textContent.replace(/[▾▴]/, mo ? "▴" : "▾"); });
     v.querySelectorAll("[data-tuoc]").forEach(c => c.onchange = () => {
@@ -15670,9 +15697,13 @@ MAN.nopTH = ({ bai }) => {
     if (!navigator.onLine) return bao("Máy đang mất mạng, em bật mạng rồi bấm lại");
     const bt = $("#thGui"), h = hs(), truoc = ((h.thNop || {})[bai] || {}).n || 0; bt.disabled = true; bt.textContent = "Đang gửi…";
     $("#thKQ").innerHTML = "";
-    try { await fetch(D.guiVe, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ khoa: D.guiKhoa, th: { lop: h.lop, ma, bai, t: Date.now(), anh, nho } }) }); } catch (e) {}
+    // đọc lời báo của Apps Script (được thì biết ngay lỗi phía cô); trình duyệt chặn đọc thì gửi kiểu cũ rồi đọc lại Sheet
+    const goi = JSON.stringify({ khoa: D.guiKhoa, th: { lop: h.lop, ma, bai, t: Date.now(), anh, nho } }); let tl = "";
+    try { tl = await (await fetch(D.guiVe, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: goi })).text(); }
+    catch (e) { try { await fetch(D.guiVe, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: goi }); } catch (e2) {} }
+    if (/^(loi|sai)/.test(tl)) { bt.textContent = "Kết quả TH"; bt.disabled = false; $("#thKQ").innerHTML = `<div class="sai-hop">⚠️ Ảnh chưa vào được thư mục của cô: lỗi ở phía nhận ảnh, không phải do máy em. Em báo cô nhé.${/quyền|permission/i.test(tl) ? '<br><span class="nho-chu">(Cô cần cấp quyền Google Drive cho Apps Script.)</span>' : ""}</div>`; return; }
     // đọc lại từ Sheet: chỉ báo “cô đã nhận” khi Sheet đã có ảnh mới
-    let co = false;
+    let co = tl === "ok";
     for (let i = 0; i < 8 && !co && $("#thGui"); i++) { await new Promise(r => setTimeout(r, 2500)); await layYCTH(); co = (((hs().thNop || {})[bai] || {}).n || 0) > truoc; }
     if (!$("#thGui")) return;
     bt.textContent = "Kết quả TH"; bt.disabled = false;
@@ -15765,8 +15796,8 @@ MAN.lapTrinh = ({ id, nv }) => {
   <div class="hang" style="gap:4px;margin-bottom:4px">${[["⇥ Thụt lề", "    "], [":", ":"], ["( )", "()"], ["=", " = "], ["==", " == "], ["%", " % "], ['" "', '""']].map(([n, v]) => `<button type="button" class="nut phu nho" data-ltchen="${esc(v)}">${esc(n)}</button>`).join("")}</div>
   <textarea id="ltMa" spellcheck="false" autocapitalize="off" autocorrect="off" aria-label="Chương trình của em" style="width:100%;min-height:220px;font:15px/1.45 Consolas,Menlo,monospace;tab-size:4;white-space:pre;overflow:auto">${esc(x.ma || cv.mau || "")}</textarea>
   <label class="nh" for="ltNhap" style="margin-top:6px">Dữ liệu nhập khi bấm Chạy (mỗi giá trị một dòng)</label><textarea id="ltNhap" style="min-height:44px;font:15px Consolas,monospace">${esc(x.nhap != null ? x.nhap : cv.bo[0][0])}</textarea>
-  <div class="hang" style="margin-top:8px"><button type="button" class="nut phu" id="ltChay">▶ Chạy</button><button type="button" class="nut cam" id="ltThu">🧪 Kiểm thử</button><button type="button" class="nut" id="ltNop">📤 Nộp bài</button></div>
-  <div id="ltKQ" style="margin-top:8px"></div><p class="mo nho-chu">Bài tự lưu trên máy này. Bấm <b>Nộp bài</b> mới gửi về cô; nộp lại thì cô thấy bản mới nhất. Điểm kiểm thử chỉ là gợi ý, cô quyết định cuối cùng. Em không nhập tên, tin riêng vào chương trình.</p></div>`;
+  <div class="hang" style="margin-top:8px"><button type="button" class="nut phu" id="ltChay">▶ Chạy</button><button type="button" class="nut cam" id="ltThu">🧪 Kiểm thử</button><button type="button" class="nut${x.nop ? " phu" : ""}" id="ltNop">${x.nop ? "✅ Đã nộp" : "📤 Nộp bài"}</button></div>
+  <div id="ltXN"></div><div id="ltKQ" style="margin-top:8px"></div><p class="mo nho-chu">Bài tự lưu trên máy này. Bấm <b>Nộp bài</b> mới gửi về cô; <b>mỗi nhiệm vụ chỉ nộp 1 lần</b>, nên em kiểm tra thật kĩ trước khi nộp. Điểm kiểm thử chỉ là gợi ý, cô quyết định cuối cùng. Em không nhập tên, tin riêng vào chương trình.</p></div>`;
   ganLui(() => di("bai", { id, b: 0 }));
   const ta = $("#ltMa"), kq = $("#ltKQ"), maChay = () => ta.value + (cv.them ? "\n" + cv.them : "");
   const oNhap = $("#ltNhap"); let cho; const luu = () => { clearTimeout(cho); cho = setTimeout(() => { x.ma = ta.value; x.nhap = oNhap.value; ghi(); }, 500); };
@@ -15805,13 +15836,26 @@ MAN.lapTrinh = ({ id, nv }) => {
     } catch (e) { hongTai(); }
     tam(false);
   };
+  // mỗi nhiệm vụ nộp 1 lần: bấm Nộp bài thì nhắc kiểm tra kĩ (nên chạy thử trong Python trên máy trước), xác nhận mới gửi
+  let lanBamNop = 0;
   $("#ltNop").onclick = () => {
+    if (x.nop) { lanBamNop++; return bao(lanBamNop > 2 ? "⚠️ Em đã bấm nhiều lần. Nhiệm vụ này đã nộp cho cô rồi, app không gửi thêm." : "⚠️ Em đã nộp nhiệm vụ này rồi. Mỗi nhiệm vụ chỉ nộp 1 lần nhé!"); }
     const ma1 = ta.value; if (!ma1.trim()) return bao("Em viết chương trình trước nhé");
     if (ma1.length > 8000) return bao("Chương trình quá dài (hơn 8000 kí tự)");
-    x.ma = ma1;
-    x.nop = Date.now(); ghi();
-    guiVe("Bài lập trình", [ngayGio(), ma, hs().lop, id, cv.id, x.dat == null ? "" : x.dat, cv.bo.length, x.luot || 0, ma1]);
-    kq.insertAdjacentHTML("afterbegin", `<div class="ok-hop">📤 Đã đưa bài vào hàng gửi về cô${navigator.onLine ? "" : "; máy có mạng sẽ tự gửi"}.</div>`);
+    x.ma = ma1; ghi();
+    $("#ltXN").innerHTML = `<div class="sai-hop" style="margin-top:8px"><b>⚠️ Em chỉ được nộp nhiệm vụ này 1 lần.</b> Trước khi nộp, em kiểm tra lại bài thật cẩn thận:
+      <ul style="margin:6px 0 6px 18px;padding:0"><li>Nên <b>chạy thử chương trình trong Python trên máy</b> (Thonny, IDLE…): ở đó báo lỗi rõ dòng nào, tìm lỗi và sửa dễ hơn trong app.</li><li>Thử với vài dữ liệu nhập khác nhau, cả trường hợp đặc biệt.</li><li>Bấm <b>🧪 Kiểm thử</b> ở đây để xem đạt bao nhiêu trường hợp.</li></ul>
+      ${x.dat == null ? "Em <b>chưa kiểm thử</b> bản hiện tại." : `Bản đã kiểm thử: đạt <b>${x.dat}/${cv.bo.length}</b> trường hợp.`}
+      <div class="hang" style="margin-top:8px"><button type="button" class="nut" id="ltNopThat">📤 Em đã kiểm tra kĩ, nộp bài</button><button type="button" class="nut phu" id="ltHuy">Để em kiểm tra lại</button></div></div>`;
+    $("#ltHuy").onclick = () => { $("#ltXN").innerHTML = ""; ta.focus(); };
+    $("#ltNopThat").onclick = () => {
+      if (x.nop) return;
+      const ma2 = ta.value; if (!ma2.trim()) return bao("Em viết chương trình trước nhé");
+      x.ma = ma2; x.nop = Date.now(); ghi();
+      guiVe("Bài lập trình", [ngayGio(), ma, hs().lop, id, cv.id, x.dat == null ? "" : x.dat, cv.bo.length, x.luot || 0, ma2]);
+      $("#ltXN").innerHTML = ""; const n = $("#ltNop"); n.textContent = "✅ Đã nộp"; n.classList.add("phu");
+      kq.insertAdjacentHTML("afterbegin", `<div class="ok-hop">📤 Đã đưa bài vào hàng gửi về cô${navigator.onLine ? "" : "; máy có mạng sẽ tự gửi"}. Nhiệm vụ này đã nộp, em không nộp lại được.</div>`);
+    };
   };
   ta.addEventListener("input", () => { if (x.dat != null) { x.dat = null; } });
   // đổi máy: lấy lại bài đã nộp nếu máy này chưa có
