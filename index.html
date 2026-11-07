@@ -14995,14 +14995,33 @@ function veThangHS(){
       const db = bs.filter(b => o(m, b).db).length, san = bs.reduce((a, b) => a + (o(m, b).san || 0), 0), nhan = bs.reduce((a, b) => a + (o(m, b).nhan || 0), 0), nen = loi ? "#fee2e2" : "#fff";
       return `<tr style="background:${nen}"><td style="${coDinh(0, nen)}"><input type="checkbox" data-tuoc="${esc(m)}" ${tuoc.has(m) ? "checked" : ""} ${khoa ? "disabled" : ""} style="width:20px;height:20px" aria-label="Tước quyền vinh danh ${esc(m)}"></td><td style="${coDinh(44, nen)}"><button type="button" data-xemten="${esc(m)}" title="Bấm để xem tên" style="border:0;background:none;padding:0;font:inherit;font-weight:800;color:inherit;text-decoration:underline dotted;cursor:pointer">${esc(m)}</button></td><td>${loi || (d.loiCt || {})[m] ? `<button type="button" data-xemloi="${esc(m)}" aria-expanded="false" title="Bấm để xem lỗi" style="border:1px solid var(--do);background:#fff;color:var(--do);border-radius:8px;padding:2px 10px;font:inherit;font-weight:800;font-size:17px;cursor:pointer">${loi} ▾</button>` : loi}</td><td>${ss}/${giao.size}</td><td>${nop}/${yc.size}</td><td>${db}</td><td>${san}</td><td>${nhan}</td>${cot.map(b => oBai(m, b)).join("")}</tr><tr data-loict="${esc(m)}" hidden><td colspan="${8 + cot.length}" style="text-align:left;background:#fff7ed;padding:10px"><div style="position:sticky;left:10px;display:inline-block;max-width:640px"><b>Lỗi của ${esc(m)} · ${esc(tenThang(th))}</b>${((d.loiCt || {})[m] || []).slice().sort((a, b) => a.t - b.t).map(e => `<div class="dk nho-chu"><b>${new Date(e.t).toLocaleString("vi-VN", { hour12: false, hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}</b>${e.bai ? " · Bài " + e.bai : ""} · ${e.loai === "Hoàn điểm" ? '<span class="chip xanh">↩️ Đã hoàn điểm</span> ' : ""}${esc(e.nd)}</div>`).join("") || '<p class="mo nho-chu">Cô dán Apps Script bản mới rồi bấm Tổng hợp lại để xem chi tiết lỗi.</p>'}</div></td></tr>`;
     };
-    v.innerHTML = `<div class="the"><b>📅 Thống kê ${esc(tenThang(th))} · lớp ${esc(lop)} · từng học sinh</b><p class="mo nho-chu">${giao.size} bài đã giao · ${yc.size} bài yêu cầu nộp thực hành. Hàng tô đỏ là em có lỗi trừ điểm, bấm số lỗi để xem chi tiết. Tích ô <b>Tước</b> thì em đó không có tên trong vinh danh tháng này, hạng các bạn dồn lên. Sẵn sàng, thực hành tính đến hết tháng; lỗi, gói đặc biệt, sàn, nhận lời tính trong tháng.</p>
+    v.innerHTML = `<div class="the"><div class="hang" style="justify-content:space-between"><b>📅 Thống kê ${esc(tenThang(th))} · lớp ${esc(lop)} · từng học sinh</b><button type="button" class="nut cam nho" id="denNX">📝 Nhận xét từng em ↓</button></div><p class="mo nho-chu">${giao.size} bài đã giao · ${yc.size} bài yêu cầu nộp thực hành. Hàng tô đỏ là em có lỗi trừ điểm, bấm số lỗi để xem chi tiết. Tích ô <b>Tước</b> thì em đó không có tên trong vinh danh tháng này, hạng các bạn dồn lên. Sẵn sàng, thực hành tính đến hết tháng; lỗi, gói đặc biệt, sàn, nhận lời tính trong tháng.</p>
     <p class="nho-chu" style="margin:4px 0"><b>Ở cột từng bài:</b> ✅ sẵn sàng · ⬜ chưa sẵn sàng · 🖼️ đã nộp thực hành · 🚫 chưa nộp thực hành · 🌸 đã làm gói đặc biệt · ⚔️ lượt lên sàn · 🤝 lượt nhận lời · ⚠️ số lỗi</p>
     <div class="cuon"><table class="bang" style="margin-top:8px"><tr><th style="${coDinh(0, "#e6f4f2")}">Tước</th><th style="${coDinh(44, "#e6f4f2")}">Mã</th><th>Lỗi</th><th>Sẵn sàng / giao</th><th>TH nộp / yêu cầu</th><th>Gói ĐB</th><th>Lên sàn</th><th>Nhận lời</th>${cot.map(b => `<th>Bài ${b}</th>`).join("")}</tr>${ro.map(hang).join("")}</table></div>${d.truBai ? "" : '<p class="sai-hop nho-chu">Cô dán Apps Script bản mới thì cột từng bài mới hiện lỗi ⚠️ của từng bài. Cột Lỗi tổng vẫn đúng.</p>'}</div>
     <div class="the"><div class="hang" style="justify-content:space-between"><b>📝 Nhận xét cuối ${esc(tenThang(th))} · lớp ${esc(lop)}</b><button type="button" class="nut phu nho" id="chepNX">📋 Sao chép tất cả</button></div>
-    <p class="mo nho-chu">✅ BẢN NHÁP — cô duyệt trước khi dùng. Mỗi em 2 ý khen 👍, 1 ý cần cố gắng 💪, app tự gợi ý từ số liệu tháng (tem sẵn sàng, gói đặc biệt, sàn thách đấu, thực hành, lỗi). Chỉ có mã học sinh, không có tên.</p>
-    ${ro.map(m => { const n = nxThang(m); return `<div class="dk" style="margin-top:6px"><div class="hang" style="justify-content:space-between"><b>${esc(m)}</b><button type="button" class="nut phu nho" data-chepnx="${esc(m)}">📋 Chép</button></div>${n.k.map(z => `<div class="nho-chu">👍 ${esc(z)}</div>`).join("")}${n.du ? "" : '<div class="nho-chu mo">👍 (chưa đủ số liệu để khen ý thứ hai — cô bổ sung)</div>'}<div class="nho-chu">💪 ${esc(n.c)}</div></div>`; }).join("")}</div>`;
-    $("#chepNX").onclick = () => saoChep(`Nhận xét ${tenThang(th)} · lớp ${lop}\n` + ro.map(nxChu).join("\n"));
-    v.querySelectorAll("[data-chepnx]").forEach(b => b.onclick = () => saoChep(nxChu(b.dataset.chepnx)));
+    <p class="mo nho-chu">✅ BẢN NHÁP — cô duyệt trước khi dùng. Mỗi em 2 ý khen 👍, 1 ý cần cố gắng 💪, app tự gợi ý từ số liệu tháng (tem sẵn sàng, gói đặc biệt, sàn thách đấu, thực hành, lỗi). Cô sửa thẳng trong ô, rồi bấm <b>Gửi</b>: nhận xét về mục 🔔 Thông báo của đúng em đó. Chỉ có mã học sinh, không có tên.</p>
+    ${khoa ? "" : '<button type="button" class="nut rong" id="guiNXHet">📤 Gửi nhận xét cho cả lớp</button>'}
+    ${ro.map(m => { const n = nxThang(m), da = (kho.daNX || {})[lop + "|" + th + "|" + m]; return `<div class="dk" style="margin-top:8px"><div class="hang" style="justify-content:space-between"><b>${esc(m)}</b><span class="nho-chu" data-danx="${esc(m)}">${da ? "✅ Đã gửi " + ngayVN(da) : ""}</span></div>
+      <textarea data-nx="${esc(m)}" style="min-height:96px;margin-top:4px" maxlength="900">${esc(n.k.map(z => "👍 " + z).join("\n") + (n.du ? "" : "\n👍 (chưa đủ số liệu để khen ý thứ hai — cô bổ sung)") + "\n💪 " + n.c)}</textarea>
+      <div class="hang" style="margin-top:4px">${khoa ? "" : `<button type="button" class="nut nho" data-guinx="${esc(m)}">📤 Gửi cho ${esc(m)}</button>`}<button type="button" class="nut phu nho" data-chepnx="${esc(m)}">📋 Chép</button></div></div>`; }).join("")}</div>`;
+    $("#denNX").onclick = () => $("#guiNXHet, #chepNX") && ($("#guiNXHet") || $("#chepNX")).scrollIntoView({ behavior: "smooth", block: "center" });
+    const nxO = m => v.querySelector(`[data-nx="${m}"]`).value.trim();
+    $("#chepNX").onclick = () => saoChep(`Nhận xét ${tenThang(th)} · lớp ${lop}\n` + ro.map(m => m + ":\n" + nxO(m)).join("\n\n"));
+    v.querySelectorAll("[data-chepnx]").forEach(b => b.onclick = () => saoChep(nxO(b.dataset.chepnx)));
+    // gửi về mục Thông báo riêng từng em (loại “Nhận xét tháng”), ghi lại đã gửi để khỏi gửi trùng
+    const guiNX = ds => {
+      ds = ds.filter(m => nxO(m) && !/cô bổ sung\)/.test(nxO(m)));
+      if (!ds.length) return bao("Cô bổ sung các ý còn trống trước khi gửi nhé");
+      const trung = ds.filter(m => (kho.daNX || {})[lop + "|" + th + "|" + m]);
+      if (trung.length && !confirm(`${trung.length} em đã nhận nhận xét ${tenThang(th)}. Cô vẫn gửi thêm bản này?`)) return;
+      dangTB(ds.map(m => ({ lop, ma: m, loai: "Nhận xét tháng", nd: `📝 Nhận xét ${tenThang(th)} của cô\n` + nxO(m) }))).then(ok => {
+        if (!ok) return; kho.daNX = kho.daNX || {}; const t = Date.now();
+        ds.forEach(m => { kho.daNX[lop + "|" + th + "|" + m] = t; const e = v.querySelector(`[data-danx="${m}"]`); if (e) e.textContent = "✅ Đã gửi " + ngayVN(t); }); ghiKho();
+      });
+    };
+    v.querySelectorAll("[data-guinx]").forEach(b => b.onclick = () => guiNX([b.dataset.guinx]));
+    if ($("#guiNXHet")) $("#guiNXHet").onclick = () => { const ds = ro.filter(m => nxO(m)), thieu = ds.filter(m => /cô bổ sung\)/.test(nxO(m))).length;
+      if (thieu && !confirm(`${thieu} em còn ý “cô bổ sung” nên chưa gửi được. Cô gửi trước cho ${ds.length - thieu} em còn lại?`)) return; guiNX(ds); };
     v.querySelectorAll("[data-xemten]").forEach(b => b.onclick = () => hienTen(lop, b.dataset.xemten));
     v.querySelectorAll("[data-xemloi]").forEach(b => b.onclick = () => { const h = [...v.querySelectorAll("[data-loict]")].find(r => r.dataset.loict === b.dataset.xemloi), mo = h.hidden; h.hidden = !mo; b.setAttribute("aria-expanded", mo ? "true" : "false"); b.textContent = b.textContent.replace(/[▾▴]/, mo ? "▴" : "▾"); });
     v.querySelectorAll("[data-tuoc]").forEach(c => c.onchange = () => {
@@ -15275,7 +15294,7 @@ function layTB(veLai){
 }
 const chuaDoc = () => { if (!ma) return []; const h = hs(); return (h.tb || []).filter(t => !(h.daDoc || []).includes(t.id)); };
 function capNhatTB(){ const e = $("#demTB"); if (!e) return; const n = chuaDoc().length; e.innerHTML = n ? '<span class="dem">' + n + "</span>" : ""; }
-const IC_TB = { "Giao việc": "📣", "Nhắc riêng": "🔔", "Nhắc chung": "📢", "Trừ điểm": "⚠️", "Hoàn điểm": "↩️" };
+const IC_TB = { "Giao việc": "📣", "Nhắc riêng": "🔔", "Nhắc chung": "📢", "Trừ điểm": "⚠️", "Hoàn điểm": "↩️", "Nhận xét tháng": "📝" };
 function theTB(t, moi){
   const b = t.bai && D.bai.find(z => z.id === +t.bai);
   return `<div class="the tb ${moi ? "moi" : ""}"><div class="hang" style="justify-content:space-between"><b>${IC_TB[t.loai] || "🔔"} ${esc(t.loai)}${t.ma === "*" ? " · cả lớp" : " · riêng em"}</b><span class="mo nho-chu">${ngayVN(t.t)}</span></div>
@@ -15878,14 +15897,45 @@ function veLTGV(){
       if (!d.ok) throw new Error(d.loi || "Không lấy được");
       if (!d.ds) { w.innerHTML = '<p class="sai-hop nho-chu">Cô dán Apps Script bản mới, chọn Phiên bản mới rồi bấm lại.</p>'; return; }
       const ro = [...new Set([...rosterLop(lop), ...Object.keys(d.ds)])], chua = ro.filter(m => !d.ds[m]);
-      w.innerHTML = `<p class="nho-chu" style="margin:8px 0"><b>${ro.length - chua.length}/${ro.length}</b> em đã nộp ít nhất một nhiệm vụ. Số là trường hợp thử đạt, chỉ là gợi ý; bấm số để xem mã.</p>${chua.length ? `<details class="nho-chu"><summary>❌ ${chua.length} em chưa nộp</summary>${chua.map(esc).join(" · ")}</details>` : ""}
-      <div class="cuon"><table class="bang" style="margin-top:8px"><tr><th>Mã</th>${nv.map(z => `<th title="${esc(z.ten)}">${esc(z.id.toUpperCase())}</th>`).join("")}</tr>${ro.map(m => `<tr><td><b>${esc(m)}</b></td>${nv.map(z => { const o = (d.ds[m] || {})[z.id]; return `<td>${o ? `<button type="button" class="nut phu nho" data-ltxem="${esc(m)}|${z.id}">${o.dat == null ? "chưa thử" : `${o.dat}/${o.tong}`}</button>` : "—"}</td>`; }).join("")}</tr>`).join("")}</table></div><div id="ltMaGV"></div>`;
-      w.querySelectorAll("[data-ltxem]").forEach(n => n.onclick = () => {
-        const [m, k] = n.dataset.ltxem.split("|"), o = d.ds[m][k];
-        $("#ltMaGV").innerHTML = `<div class="dk" style="margin-top:8px"><b>${esc(m)} · ${esc(k.toUpperCase())}</b> · ${o.dat == null ? "chưa kiểm thử" : `đạt ${o.dat}/${o.tong}`} · ${o.luot} lần thử${o.t ? " · nộp " + gioNgay(o.t) : ""}<pre style="background:#f1f5f9;border-radius:8px;padding:8px;margin:6px 0 0;overflow:auto;font-size:14px">${esc(o.ma)}</pre></div>`;
-      });
+      w.innerHTML = `<p class="nho-chu" style="margin:8px 0"><b>${ro.length - chua.length}/${ro.length}</b> em đã nộp ít nhất một nhiệm vụ. Số là trường hợp thử đạt, chỉ là gợi ý. <b>Bấm vào mã học sinh hoặc ô số</b> để xem bài em gửi, chạy kiểm thử ngay trên máy cô.</p>${chua.length ? `<details class="nho-chu"><summary>❌ ${chua.length} em chưa nộp</summary>${chua.map(esc).join(" · ")}</details>` : ""}
+      <div class="cuon"><table class="bang" style="margin-top:8px"><tr><th>Mã</th>${nv.map(z => `<th title="${esc(z.ten)}">${esc(z.id.toUpperCase())}</th>`).join("")}</tr>${ro.map(m => `<tr><td>${d.ds[m] ? `<button type="button" class="nut phu nho" data-ltxem="${esc(m)}|">${esc(m)}</button>` : `<b>${esc(m)}</b>`}</td>${nv.map(z => { const o = (d.ds[m] || {})[z.id]; return `<td>${o ? `<button type="button" class="nut phu nho" data-ltxem="${esc(m)}|${z.id}">${o.dat == null ? "chưa thử" : `${o.dat}/${o.tong}`}</button>` : "—"}</td>`; }).join("")}</tr>`).join("")}</table></div><div id="ltMaGV"></div>`;
+      w.querySelectorAll("[data-ltxem]").forEach(n => n.onclick = () => { const [m, k] = n.dataset.ltxem.split("|"); xemLTGV(lop, bai, d, ro.filter(z => d.ds[z]), m, k); });
     }).catch(e => { w.innerHTML = `<p class="sai-hop nho-chu">Chưa lấy được: ${esc(e.message)}.</p>`; });
   };
+}
+
+// xem bài lập trình của một em (cửa sổ lớn): mã em gửi, điểm em tự kiểm thử, nút chạy lại bộ thử trên máy cô; mũi tên sang em kế tiếp
+function xemLTGV(lop, bai, d, ds, m, k){
+  const nv = D.lapTrinh[bai], cua = d.ds[m] || {}, i = ds.indexOf(m), cac = nv.filter(z => cua[z.id] && (!k || z.id === k));
+  let n = $("#ltLon"); if (n) n.remove();
+  n = document.createElement("div"); n.id = "ltLon"; n.style.cssText = "position:fixed;inset:0;background:#000c;z-index:99;display:flex;align-items:flex-start;justify-content:center;padding:12px;overflow:auto";
+  n.innerHTML = `<div class="the" style="width:min(860px,100%);margin:0"><div class="hang" style="justify-content:space-between"><b style="font-size:18px">💻 ${esc(m)} · lớp ${esc(lop)} · Bài ${bai}${k ? " · " + esc(k.toUpperCase()) : ""} · ${i + 1}/${ds.length}</b><button type="button" class="nut phu nho" id="ltDong">✕ Đóng</button></div>
+    ${cac.map(z => { const o = cua[z.id]; return `<div class="dk" style="margin-top:10px"><b>${esc(z.ten)}</b><p class="nho-chu" style="margin:2px 0">${esc(z.de)}</p>
+      <div class="nho-chu">${o.dat == null ? "Em chưa kiểm thử" : `Em tự kiểm thử: đạt <b>${o.dat}/${o.tong}</b>`} · ${o.luot || 0} lần thử${o.t ? " · nộp " + gioNgay(o.t) : ""}</div>
+      <pre style="background:#f1f5f9;border-radius:8px;padding:8px;margin:6px 0 0;overflow:auto;font-size:15px;max-height:50vh">${esc(o.ma)}</pre>
+      <div class="hang" style="margin-top:6px"><button type="button" class="nut cam nho" data-ltchay="${z.id}">🧪 Chạy kiểm thử trên máy cô</button><button type="button" class="nut phu nho" data-ltchep="${z.id}">📋 Chép mã</button></div><div data-ltkq="${z.id}"></div></div>`; }).join("") || '<p class="mo">Em này chưa nộp nhiệm vụ này.</p>'}
+    <div class="hang" style="margin-top:10px;justify-content:center"><button type="button" class="nut phu nho" id="ltTruoc" ${i > 0 ? "" : "disabled"}>◀ Em trước</button><button type="button" class="nut phu nho" id="ltSau" ${i < ds.length - 1 ? "" : "disabled"}>Em sau ▶</button></div></div>`;
+  document.body.appendChild(n);
+  n.onclick = e => { if (e.target === n) n.remove(); };
+  $("#ltDong").onclick = () => n.remove();
+  $("#ltTruoc").onclick = () => xemLTGV(lop, bai, d, ds, ds[i - 1], k);
+  $("#ltSau").onclick = () => xemLTGV(lop, bai, d, ds, ds[i + 1], k);
+  n.querySelectorAll("[data-ltchep]").forEach(b => b.onclick = () => saoChep(cua[b.dataset.ltchep].ma));
+  n.querySelectorAll("[data-ltchay]").forEach(b => b.onclick = async () => {
+    const cv = nv.find(z => z.id === b.dataset.ltchay), ma1 = cua[cv.id].ma, kq = n.querySelector(`[data-ltkq="${cv.id}"]`), maChay = ma1 + (cv.them ? "\n" + cv.them : "");
+    b.disabled = true; if (!pySan) kq.innerHTML = '<p class="mo nho-chu">⏳ Đang tải bộ chạy Python (lần đầu khoảng 14 MB)…</p>';
+    try {
+      await pySanSang(); const dong = []; let dat = 0;
+      for (let j = 0; j < cv.bo.length; j++) {
+        kq.innerHTML = `<p class="mo nho-chu">Đang thử ${j + 1}/${cv.bo.length}…</p>`;
+        const [vao, mong, ghiChu] = cv.bo[j], r = await pyChay(maChay, vao, true), canOK = !cv.can || new RegExp("\\b" + cv.can + "\\b").test(ma1), ok = !r.hetGio && canOK && (mong.loi ? !!r.loi && r.loi.ten === mong.loi : !r.loi && khopKQ(r.ra, mong, vao, cv));
+        if (ok) dat++;
+        dong.push(`<div class="${ok ? "ok-hop" : "sai-hop"} nho-chu">${ok ? "✓" : "✗"} Thử ${j + 1}${vao ? `: nhập ${esc(vao.replace(/\n/g, " / "))}` : ""} (${esc(ghiChu)})${ok ? "" : `<br>${canOK ? "" : `Cần dùng lệnh ${esc(cv.can)}.<br>`}Mong đợi: ${esc(taMong(mong))}<br>Máy in ra: ${r.hetGio ? "chạy quá 5 giây" : esc((r.ra || "").trim().replace(/\n/g, " / ")) || "(không in gì)"}${r.loi ? "<br>" + esc(taLoiPy(r.loi)) : ""}`}</div>`);
+      }
+      kq.innerHTML = `<div class="the" style="margin:6px 0"><b>Máy cô chạy lại: đạt ${dat}/${cv.bo.length} trường hợp</b> <span class="mo nho-chu">(gợi ý, cô quyết điểm)</span></div>${dong.join("")}`;
+    } catch (e) { kq.innerHTML = '<div class="sai-hop nho-chu">Máy cô chưa tải được bộ chạy Python (cần mạng).</div>'; }
+    b.disabled = false;
+  });
 }
 
 // ── GIỜ THU BÀI: Sheet chỉ tính các dòng trước giờ thu nên máy cô tắt lúc hết giờ vẫn ra đúng số; học sinh không bị khoá app
