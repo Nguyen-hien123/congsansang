@@ -14940,6 +14940,54 @@ function hienTen(lop, m){
     dat(`${esc(m)}: ${esc(d.loi || "cô dán Apps Script bản mới để xem tên")}`);
   }).catch(() => dat(`${esc(m)}: chưa lấy được tên, cô kiểm tra mạng`));
 }
+// RÊ CHUỘT VÀO MÃ HỌC SINH (mọi thẻ của cô, máy có chuột): hiện tên cạnh chuột. Lớp lấy từ khung gần nhất có đúng một tên lớp,
+// không thì lớp đang chọn. Tên chỉ nhớ trong lúc trang đang mở (đóng trang là mất), không lưu máy, không gửi đi nơi khác.
+const tenTam = {}, LOP_RE = /\b1[0-2][A-Z]{1,2}\d{1,2}\b/g;
+let reTen = null, reCho = null;
+const chuKhongChon = e => { let s = ""; const w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement && n.parentElement.closest("select,script,style") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT }); while (w.nextNode() && s.length < 20000) s += w.currentNode.nodeValue + " "; return s; };
+function lopQuanh(el){
+  for (let e = el; e && e !== document.body; e = e.parentElement) {
+    if (e.dataset && e.dataset.lop) return e.dataset.lop;
+    const ls = [...new Set(chuKhongChon(e).toUpperCase().match(LOP_RE) || [])];
+    if (ls.length === 1) return ls[0]; if (ls.length > 1) break;
+  }
+  const chon = [...new Set([...document.querySelectorAll("select")].map(s => String(s.value).toUpperCase()).filter(v => /^1[0-2][A-Z]{1,2}\d{1,2}$/.test(v)))];
+  return chon.length === 1 ? chon[0] : (ptChon.lop && ptChon.lop !== "*" ? ptChon.lop : "");
+}
+function maDuoiChuot(e){
+  const t = e.target; if (!t || !t.closest || t.closest("input,textarea,select,#reTen")) return "";
+  const ds = t.closest("[data-xemten]"); if (ds) return ds.dataset.xemten;
+  const r = document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : (document.caretPositionFromPoint && (p => p && { startContainer: p.offsetNode, startOffset: p.offset })(document.caretPositionFromPoint(e.clientX, e.clientY)));
+  if (r && r.startContainer && r.startContainer.nodeType === 3) {
+    const s = r.startContainer.nodeValue, i = r.startOffset, re = /HS\d{1,4}/g; let m;
+    while ((m = re.exec(s))) if (i >= m.index && i <= m.index + m[0].length) return m[0];
+  }
+  const tx = (t.textContent || "").trim(); return /^HS\d{1,4}$/.test(tx) && t.children.length < 2 ? tx : "";
+}
+function anTenRe(){ clearTimeout(reCho); if (reTen) { reTen.remove(); reTen = null; } }
+document.addEventListener("mousemove", e => {
+  if (!laCo || (typeof gvThu !== "undefined" && gvThu) || !D.guiVe || (window.matchMedia && !matchMedia("(hover:hover)").matches)) return;
+  const m = maDuoiChuot(e);
+  if (!m) return anTenRe();
+  if (reTen && reTen.dataset.ma === m) { reTen.style.left = Math.min(e.clientX + 14, innerWidth - 260) + "px"; reTen.style.top = (e.clientY + 18) + "px"; return; }
+  anTenRe();
+  const x = e.clientX, y = e.clientY, el = e.target;
+  reCho = setTimeout(() => {
+    const lop = lopQuanh(el), h = document.createElement("div"); h.id = "reTen"; h.className = "khong-in"; h.dataset.ma = m; h.setAttribute("role", "tooltip");
+    h.style.cssText = `position:fixed;left:${Math.min(x + 14, innerWidth - 260)}px;top:${y + 18}px;z-index:99;background:#0f172a;color:#fff;padding:6px 10px;border-radius:8px;font-size:15px;box-shadow:0 4px 12px #0005;pointer-events:none;max-width:260px`;
+    const dat = s => { if (reTen === h) h.innerHTML = s; };
+    document.body.appendChild(h); reTen = h;
+    if (!lop) return dat(`<b>${esc(m)}</b>: chưa rõ lớp — cô chọn lớp ở ô chọn lớp`);
+    const khoaT = lop + "|" + m;
+    if (tenTam[khoaT]) return dat(`<b>${esc(m)}</b> · ${esc(lop)}: <b>${esc(tenTam[khoaT])}</b>`);
+    dat(`<b>${esc(m)}</b> · ${esc(lop)}: đang lấy tên…`);
+    fetch(D.guiVe + (D.guiVe.includes("?") ? "&" : "?") + "ten=1&gv=" + encodeURIComponent(laCo) + "&lop=" + encodeURIComponent(lop) + "&ma=" + encodeURIComponent(m)).then(r => r.json()).then(d => {
+      if (d.ok && d.ten) { tenTam[khoaT] = d.ten; return dat(`<b>${esc(m)}</b> · ${esc(lop)}: <b>${esc(d.ten)}</b>`); }
+      dat(`<b>${esc(m)}</b> · ${esc(lop)}: ${esc(d.loi || "chưa có tên")}`);
+    }).catch(() => dat(`<b>${esc(m)}</b>: chưa lấy được tên, cô kiểm tra mạng`));
+  }, 300);
+});
+document.addEventListener("scroll", anTenRe, true);
 // thống kê tháng từng em, bấm Tổng hợp mới lấy từ Sheet; ô tước vinh danh ghi ngay về Sheet
 function veThangHS(){
   const v = $("#thangHS"); if (!v) return;
@@ -14989,7 +15037,7 @@ function veThangHS(){
       const k2 = khen.sort((a, b) => b[0] - a[0]).slice(0, 2).map(z => z[1]), c1 = che.sort((a, b) => b[0] - a[0])[0][1];
       return { k: k2, c: c1, du: k2.length === 2 };
     };
-    const nxChu = m => { const n = nxThang(m); return `${m}: ${n.k.map(z => "👍 " + z).join(" ")}${n.du ? "" : " [chưa đủ số liệu để khen 2 ý — cô bổ sung]"} 💪 ${n.c}`; };
+    const nxChu = m => { const n = nxThang(m); return `${m}: ${n.k.map(z => "👍 " + z).join(" ")}${n.du ? "" : " 👍 (chưa đủ số liệu để cô ghi nhận về việc lên sàn/ nhận lời thách đấu — em chú ý nhé)"} 💪 ${n.c}`; };
     const hang = m => {
       const bs = baiCo(m), ss = [...giao].filter(b => o(m, b).cao >= D.nguong && o(m, b).pt).length, nop = [...yc].filter(b => o(m, b).th).length, loi = Math.max(0, d.tru[m] || 0);
       const db = bs.filter(b => o(m, b).db).length, san = bs.reduce((a, b) => a + (o(m, b).san || 0), 0), nhan = bs.reduce((a, b) => a + (o(m, b).nhan || 0), 0), nen = loi ? "#fee2e2" : "#fff";
@@ -14999,10 +15047,10 @@ function veThangHS(){
     <p class="nho-chu" style="margin:4px 0"><b>Ở cột từng bài:</b> ✅ sẵn sàng · ⬜ chưa sẵn sàng · 🖼️ đã nộp thực hành · 🚫 chưa nộp thực hành · 🌸 đã làm gói đặc biệt · ⚔️ lượt lên sàn · 🤝 lượt nhận lời · ⚠️ số lỗi</p>
     <div class="cuon"><table class="bang" style="margin-top:8px"><tr><th style="${coDinh(0, "#e6f4f2")}">Tước</th><th style="${coDinh(44, "#e6f4f2")}">Mã</th><th>Lỗi</th><th>Sẵn sàng / giao</th><th>TH nộp / yêu cầu</th><th>Gói ĐB</th><th>Lên sàn</th><th>Nhận lời</th>${cot.map(b => `<th>Bài ${b}</th>`).join("")}</tr>${ro.map(hang).join("")}</table></div>${d.truBai ? "" : '<p class="sai-hop nho-chu">Cô dán Apps Script bản mới thì cột từng bài mới hiện lỗi ⚠️ của từng bài. Cột Lỗi tổng vẫn đúng.</p>'}</div>
     <div class="the"><div class="hang" style="justify-content:space-between"><b>📝 Nhận xét cuối ${esc(tenThang(th))} · lớp ${esc(lop)}</b><button type="button" class="nut phu nho" id="chepNX">📋 Sao chép tất cả</button></div>
-    <p class="mo nho-chu">✅ BẢN NHÁP — cô duyệt trước khi dùng. Mỗi em 2 ý khen 👍, 1 ý cần cố gắng 💪, app tự gợi ý từ số liệu tháng (tem sẵn sàng, gói đặc biệt, sàn thách đấu, thực hành, lỗi). Cô sửa thẳng trong ô, rồi bấm <b>Gửi</b>: nhận xét về mục 🔔 Thông báo của đúng em đó. Chỉ có mã học sinh, không có tên.</p>
+    <p class="mo nho-chu">✅ BẢN NHÁP — cô duyệt trước khi dùng. Mỗi em 2 ý khen 👍, 1 ý cần cố gắng 💪, app tự gợi ý từ số liệu tháng (tem sẵn sàng, gói đặc biệt, sàn thách đấu, thực hành, lỗi). Cô <b>sửa thẳng trong ô</b> (thêm, bớt, đổi câu) rồi mới bấm <b>Gửi</b>, app gửi đúng chữ trong ô: nhận xét về mục 🔔 Thông báo của đúng em đó. Chỉ có mã học sinh, không có tên.</p>
     ${khoa ? "" : '<button type="button" class="nut rong" id="guiNXHet">📤 Gửi nhận xét cho cả lớp</button>'}
     ${ro.map(m => { const n = nxThang(m), da = (kho.daNX || {})[lop + "|" + th + "|" + m]; return `<div class="dk" style="margin-top:8px"><div class="hang" style="justify-content:space-between"><b>${esc(m)}</b><span class="nho-chu" data-danx="${esc(m)}">${da ? "✅ Đã gửi " + ngayVN(da) : ""}</span></div>
-      <textarea data-nx="${esc(m)}" style="min-height:96px;margin-top:4px" maxlength="900">${esc(n.k.map(z => "👍 " + z).join("\n") + (n.du ? "" : "\n👍 (chưa đủ số liệu để khen ý thứ hai — cô bổ sung)") + "\n💪 " + n.c)}</textarea>
+      <textarea data-nx="${esc(m)}" style="min-height:96px;margin-top:4px" maxlength="900">${esc(n.k.map(z => "👍 " + z).join("\n") + (n.du ? "" : "\n👍 (chưa đủ số liệu để cô ghi nhận về việc lên sàn/ nhận lời thách đấu — em chú ý nhé)") + "\n💪 " + n.c)}</textarea>
       <div class="hang" style="margin-top:4px">${khoa ? "" : `<button type="button" class="nut nho" data-guinx="${esc(m)}">📤 Gửi cho ${esc(m)}</button>`}<button type="button" class="nut phu nho" data-chepnx="${esc(m)}">📋 Chép</button></div></div>`; }).join("")}</div>`;
     $("#denNX").onclick = () => $("#guiNXHet, #chepNX") && ($("#guiNXHet") || $("#chepNX")).scrollIntoView({ behavior: "smooth", block: "center" });
     const nxO = m => v.querySelector(`[data-nx="${m}"]`).value.trim();
@@ -15010,8 +15058,8 @@ function veThangHS(){
     v.querySelectorAll("[data-chepnx]").forEach(b => b.onclick = () => saoChep(nxO(b.dataset.chepnx)));
     // gửi về mục Thông báo riêng từng em (loại “Nhận xét tháng”), ghi lại đã gửi để khỏi gửi trùng
     const guiNX = ds => {
-      ds = ds.filter(m => nxO(m) && !/cô bổ sung\)/.test(nxO(m)));
-      if (!ds.length) return bao("Cô bổ sung các ý còn trống trước khi gửi nhé");
+      ds = ds.filter(m => nxO(m));
+      if (!ds.length) return bao("Ô nhận xét đang trống, cô viết trước khi gửi nhé");
       const trung = ds.filter(m => (kho.daNX || {})[lop + "|" + th + "|" + m]);
       if (trung.length && !confirm(`${trung.length} em đã nhận nhận xét ${tenThang(th)}. Cô vẫn gửi thêm bản này?`)) return;
       dangTB(ds.map(m => ({ lop, ma: m, loai: "Nhận xét tháng", nd: `📝 Nhận xét ${tenThang(th)} của cô\n` + nxO(m) }))).then(ok => {
@@ -15020,8 +15068,7 @@ function veThangHS(){
       });
     };
     v.querySelectorAll("[data-guinx]").forEach(b => b.onclick = () => guiNX([b.dataset.guinx]));
-    if ($("#guiNXHet")) $("#guiNXHet").onclick = () => { const ds = ro.filter(m => nxO(m)), thieu = ds.filter(m => /cô bổ sung\)/.test(nxO(m))).length;
-      if (thieu && !confirm(`${thieu} em còn ý “cô bổ sung” nên chưa gửi được. Cô gửi trước cho ${ds.length - thieu} em còn lại?`)) return; guiNX(ds); };
+    if ($("#guiNXHet")) $("#guiNXHet").onclick = () => guiNX(ro.filter(m => nxO(m)));
     v.querySelectorAll("[data-xemten]").forEach(b => b.onclick = () => hienTen(lop, b.dataset.xemten));
     v.querySelectorAll("[data-xemloi]").forEach(b => b.onclick = () => { const h = [...v.querySelectorAll("[data-loict]")].find(r => r.dataset.loict === b.dataset.xemloi), mo = h.hidden; h.hidden = !mo; b.setAttribute("aria-expanded", mo ? "true" : "false"); b.textContent = b.textContent.replace(/[▾▴]/, mo ? "▴" : "▾"); });
     v.querySelectorAll("[data-tuoc]").forEach(c => c.onchange = () => {
