@@ -122,6 +122,7 @@ select{max-width:100%}
 .phieu-mk{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}.o-mk{display:flex;gap:10px;align-items:center;border:1.5px dashed #94a3b8;border-radius:10px;padding:8px 10px;background:#fff;break-inside:avoid}.o-mk .mk{font-family:Consolas,monospace;font-size:20px;letter-spacing:3px}
 @media print{.phieu-mk{grid-template-columns:repeat(3,1fr)}}
 .cach-xp{margin-top:8px;border-top:1px dashed #f59e0b;padding-top:6px}.cach-xp summary{cursor:pointer}
+.ai-dang{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#ecfeff;border:1.5px solid #0e7490;border-radius:12px;padding:6px 10px;margin:0 0 10px;font-size:14px}.ai-dang .mo{margin-left:auto}.ai-dang .nut{background:#b91c1c}
 .thu-bang{background:#fef3c7;border:2px dashed #f59e0b;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:14px}
 .td{border:2px solid #f59e0b;background:linear-gradient(135deg,#fff7ed,#fff)}
 .dongho{height:10px;border-radius:9px;background:#e2e8f0;overflow:hidden;margin:10px 0}.dongho i{display:block;height:100%;background:linear-gradient(90deg,#16a34a,#f59e0b,#dc2626);transition:width .1s linear}
@@ -13293,12 +13294,18 @@ function di(v, a){
   document.querySelectorAll('#navGv [data-v="gvViec"], #navGv [data-v="gvThu"]').forEach(x => x.classList.toggle("an", laQL()));
   if (v !== "vao" && !/^gv/.test(v) && hsHetHan()) return hetHanHS();
   const laGVv = /^gv/.test(v) && laCo;
-  $("#nav").classList.toggle("an", laGVv || !ma || v === "vao" || /^gv/.test(v)); $("#navGv").classList.toggle("an", !laGVv); if ($("#dongHo")) $("#dongHo").classList.toggle("an", !laGVv);
+  $("#nav").classList.toggle("an", laGVv || !ma || v === "vao" || v === "xacNhan" || /^gv/.test(v)); $("#navGv").classList.toggle("an", !laGVv); if ($("#dongHo")) $("#dongHo").classList.toggle("an", !laGVv);
   document.querySelectorAll("nav.day button").forEach(x => x.classList.toggle("dang", x.dataset.v === v)); capNhatDem(); (MAN[v] || MAN.nha)(a); if (v === "gvLop") ganCongTac();
   if (ma && !laThu() && !/^gv/.test(v) && v !== "vao" && hanHS() && (hs().lopThu || hanHS() - Date.now() < 14 * 86400000))
     app.insertAdjacentHTML("afterbegin", `<div class="thu-bang">${hs().lopThu ? `🧪 <b>Lớp dùng thử</b> ${esc(hs().lop)} · em` : "📅 Em"} dùng app đến hết ngày <b>${ngayHan(hanHS())}</b>.</div>`);
   if (laGVv && laQL()) app.insertAdjacentHTML("afterbegin", `<div class="thu-bang" style="background:#ecfdf5;border-color:#0f766e">👔 <b>Tài khoản quản lý · chỉ xem</b>${gvThu.ten ? " · " + esc(gvThu.ten) : ""} · lớp ${gvThu.lop.map(esc).join(", ")} · dùng đến hết ngày <b>${ngayHan(gvThu.han)}</b>.</div>`);
   else if (laGVv && gvThu) app.insertAdjacentHTML("afterbegin", `<div class="thu-bang">🧪 <b>Tài khoản giáo viên dùng thử</b>${gvThu.ten ? " · " + esc(gvThu.ten) : ""} · lớp ${gvThu.lop.map(esc).join(", ")} · dùng đến hết ngày <b>${ngayHan(gvThu.han)}</b>. Hết hạn app tự đăng xuất.</div>`);
+  if (ma && !laThu() && !/^gv/.test(v) && v !== "vao" && v !== "xacNhan") {
+    try { sessionStorage.setItem(KHOA + "_xn", ma); localStorage.setItem(KHOA + "_tl", Date.now()); } catch (e) {}
+    app.insertAdjacentHTML("afterbegin", `<div class="ai-dang">👤 Em đang là <b>${esc(ma)} · lớp ${esc(hs().lop)}</b><span class="mo">Không phải em?</span><button type="button" class="nut nho" id="raTren">🚪 Thoát</button></div>`);
+    $("#raTren").onclick = () => { if (!confirm(`Thoát tài khoản ${ma} (lớp ${hs().lop}) trên máy này?
+Bài đã làm vẫn được giữ, lần sau đăng nhập lại là thấy.`)) return; thoatHS(); };
+  }
   if (laThu() && !/^gv/.test(v) && v !== "vao") {
     app.insertAdjacentHTML("afterbegin", `<div class="thu-bang">🧪 <b>Chế độ thử của cô</b> · lớp ${esc(hs().lop)} — làm như học sinh, mọi bài đã mở, kết quả lưu ở các trang tính riêng <b>“… · Cô thử”</b> trên Google Sheet (không lẫn lớp thật) — đổi máy, vào thử lại là lấy lại được.<div class="hang" style="margin-top:6px"><button class="nut nho" id="raThu">↩ Về trang cô</button><button class="nut phu nho" id="lamLaiThu">Làm lại từ đầu</button></div></div>`);
     $("#raThu").onclick = () => { ma = null; ghi(); di(laCo ? "gvTheoDoi" : "vao"); };
@@ -13308,9 +13315,21 @@ function di(v, a){
 document.querySelectorAll("nav.day button").forEach(x => x.onclick = () => di(x.dataset.v));
 function capNhatDem(){ if (!ma) return; if (typeof capNhatTB === "function") capNhatTB(); const n = Object.keys(hs().sai).length; $("#demSai").innerHTML = n ? '<span class="dem">' + n + "</span>" : ""; }
 const dau = (t, phu, lui) => `<header class="dau">${lui ? `<button class="lui" id="lui" aria-label="Quay lại">‹</button>` : ""}<h1>${t}${phu ? `<small>${phu}</small>` : ""}</h1></header>`;
+// Thoát tài khoản HS (máy dùng chung: em sau không vào nhầm tài khoản em trước). Bài đã làm vẫn giữ trên máy và Sheet.
+function thoatHS(){ const l = hs().lop; dongPhienHS(); try { sessionStorage.removeItem(KHOA + "_xn"); } catch (e) {} tatCa._lopCu = l; ma = null; ghi(); di("vao"); }
+// Mở app mà máy còn nhớ tài khoản HS: hỏi lại nếu là thẻ trình duyệt mới hoặc đã quá 30 phút không dùng.
+const canXacNhan = () => { try { return sessionStorage.getItem(KHOA + "_xn") !== ma || Date.now() - (+localStorage.getItem(KHOA + "_tl") || 0) > 30 * 6e4; } catch (e) { return false; } };
 const ganLui = f => { const b = $("#lui"); if (b) b.onclick = f; };
 
 const MAN = {};
+MAN.xacNhan = () => {
+  const q = typeof quanBai === "function" ? quanBai(ma) : null;
+  app.innerHTML = dau("👋 Chào em!", "Cổng sẵn sàng Tin 10") + `<div class="the" style="text-align:center;border:2px solid #0f766e">
+  <p style="margin:4px 0">Máy này đang nhớ tài khoản</p><div style="font-size:26px;font-weight:800;margin:6px 0">${esc(ma)} · lớp ${esc(hs().lop)}</div>${q ? `<div class="mo">${esc(q.ten)}</div>` : ""}
+  <p class="nho-chu" style="margin:10px 0 14px">Đây có đúng là em không? Nếu là bạn học tiết trước quên thoát, em bấm <b>Không phải em</b> rồi đăng nhập bằng mã của mình.</p>
+  <div class="hang" style="justify-content:center;gap:10px;flex-wrap:wrap"><button class="nut" id="xnDung">✅ Đúng, em là ${esc(ma)}</button><button class="nut cam" id="xnKhong">🚪 Không phải em — đăng nhập mã khác</button></div></div>`;
+  $("#xnDung").onclick = () => di("nha"); $("#xnKhong").onclick = thoatHS;
+};
 
 // ───── VÀO HỌC
 // chỉ hiện ở bản cài trên GitHub: nói rõ bản này tiếp tục được cập nhật sau ngày nộp
@@ -16616,11 +16635,11 @@ function ganXemGon(){
   if ($("#vao") || $("#mgv0") || app.children.length < 2) { if (co) co.remove(); return; }
   if (co) { if (app.lastElementChild !== co) app.appendChild(co); return; }
   const c = document.createElement("div"); c.className = "cuoi-the khong-in";
-  c.innerHTML = '<div class="hang" style="justify-content:center"><button type="button" class="nut phu nho" data-cuoi="len">⬆️ Về đầu trang</button>' + (trangCo ? '<button type="button" class="nut phu nho" data-cuoi="gon">▴ Thu gọn tất cả</button>' : "") + (ma && app.querySelector(".bai") ? '<button type="button" class="nut phu nho" id="ra">Đổi mã học sinh</button>' : "") + "</div>";
+  c.innerHTML = '<div class="hang" style="justify-content:center"><button type="button" class="nut phu nho" data-cuoi="len">⬆️ Về đầu trang</button>' + (trangCo ? '<button type="button" class="nut phu nho" data-cuoi="gon">▴ Thu gọn tất cả</button>' : "") + (ma && app.querySelector(".bai") ? '<button type="button" class="nut phu nho" id="ra">🚪 Thoát (đổi mã học sinh)</button>' : "") + "</div>";
   c.style.flexDirection = "column"; c.style.alignItems = "center";
   c.insertAdjacentHTML("beforeend", tbBan());
   c.onclick = e => {
-    if (e.target.closest("#ra")) { dongPhienHS(); ma = null; ghi(); return di("vao"); }
+    if (e.target.closest("#ra")) return thoatHS();
     const v = e.target.closest("[data-cuoi]"); if (!v) return;
     if (v.dataset.cuoi === "gon") app.querySelectorAll(".the.tg-co").forEach(t => { if (!t.querySelector("#locLop,#thuLop,#gBai")) tgDat(t, true); });   // giữ khu vực chọn lớp, bài
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -16632,7 +16651,7 @@ new MutationObserver(() => { if (tgCho) return; tgCho = true; setTimeout(() => {
 dayDi();
 if (ma && D.matKhau && !laThu() && !hs().mkOk) { tatCa._lopCu = hs().lop; ma = null; ghi(); }
 if (ma && !laThu() && fidHS(ma) && !phienHSMo(ma)) { tatCa._lopCu = hs().lop; ma = null; ghi(); }   // đã bật mở khoá nhanh: mở app lại phải mở khoá
-di(ma ? "nha" : laCo ? (kho.viec.length ? "gvTheoDoi" : "gvLop") : "vao");
+di(ma ? (!laThu() && canXacNhan() ? "xacNhan" : "nha") : laCo ? (kho.viec.length ? "gvTheoDoi" : "gvLop") : "vao");
 kiemThu(); kiemHanHS(); kiemMkHS(); layTienDoSheet(false); window.addEventListener("online", () => { kiemThu(); kiemHanHS(); kiemMkHS(); });
 })();
 </script>
