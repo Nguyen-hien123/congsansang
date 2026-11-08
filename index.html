@@ -122,7 +122,7 @@ select{max-width:100%}
 .phieu-mk{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}.o-mk{display:flex;gap:10px;align-items:center;border:1.5px dashed #94a3b8;border-radius:10px;padding:8px 10px;background:#fff;break-inside:avoid}.o-mk .mk{font-family:Consolas,monospace;font-size:20px;letter-spacing:3px}
 @media print{.phieu-mk{grid-template-columns:repeat(3,1fr)}}
 .cach-xp{margin-top:8px;border-top:1px dashed #f59e0b;padding-top:6px}.cach-xp summary{cursor:pointer}
-.ai-dang{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#ecfeff;border:1.5px solid #0e7490;border-radius:12px;padding:6px 10px;margin:0 0 10px;font-size:14px}.ai-dang .mo{margin-left:auto}.ai-dang .nut{background:#b91c1c}
+.ai-dang{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#ecfeff;border:1.5px solid #0e7490;border-radius:12px;padding:6px 10px;margin:0 0 10px;font-size:14px}.ai-dang .mo{margin-left:auto}.ai-dang .nut:not(.phu){background:#b91c1c}.ai-dang.hoi{background:#fef2f2;border-color:#b91c1c}
 .thu-bang{background:#fef3c7;border:2px dashed #f59e0b;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:14px}
 .td{border:2px solid #f59e0b;background:linear-gradient(135deg,#fff7ed,#fff)}
 .dongho{height:10px;border-radius:9px;background:#e2e8f0;overflow:hidden;margin:10px 0}.dongho i{display:block;height:100%;background:linear-gradient(90deg,#16a34a,#f59e0b,#dc2626);transition:width .1s linear}
@@ -13303,8 +13303,11 @@ function di(v, a){
   if (ma && !laThu() && !/^gv/.test(v) && v !== "vao" && v !== "xacNhan") {
     try { sessionStorage.setItem(KHOA + "_xn", ma); localStorage.setItem(KHOA + "_tl", Date.now()); } catch (e) {}
     app.insertAdjacentHTML("afterbegin", `<div class="ai-dang">👤 Em đang là <b>${esc(ma)} · lớp ${esc(hs().lop)}</b><span class="mo">Không phải em?</span><button type="button" class="nut nho" id="raTren">🚪 Thoát</button></div>`);
-    $("#raTren").onclick = () => { if (!confirm(`Thoát tài khoản ${ma} (lớp ${hs().lop}) trên máy này?
-Bài đã làm vẫn được giữ, lần sau đăng nhập lại là thấy.`)) return; thoatHS(); };
+    $("#raTren").onclick = () => {   // hỏi ngay trên trang (không dùng confirm(): trình duyệt trong Zalo, app cài đặt hay chặn hộp thoại)
+      const t = app.querySelector(".ai-dang"); t.classList.add("hoi");
+      t.innerHTML = `<span>🚪 Thoát tài khoản <b>${esc(ma)} · lớp ${esc(hs().lop)}</b>? Bài đã làm vẫn được giữ, lần sau đăng nhập lại là thấy.</span><span class="hang" style="margin-left:auto;gap:6px"><button type="button" class="nut nho" id="raCo">🚪 Thoát ngay</button><button type="button" class="nut phu nho" id="raKhong">Ở lại</button></span>`;
+      $("#raCo").onclick = thoatHS; $("#raKhong").onclick = () => di(manNay);
+    };
   }
   if (laThu() && !/^gv/.test(v) && v !== "vao") {
     app.insertAdjacentHTML("afterbegin", `<div class="thu-bang">🧪 <b>Chế độ thử của cô</b> · lớp ${esc(hs().lop)} — làm như học sinh, mọi bài đã mở, kết quả lưu ở các trang tính riêng <b>“… · Cô thử”</b> trên Google Sheet (không lẫn lớp thật) — đổi máy, vào thử lại là lấy lại được.<div class="hang" style="margin-top:6px"><button class="nut nho" id="raThu">↩ Về trang cô</button><button class="nut phu nho" id="lamLaiThu">Làm lại từ đầu</button></div></div>`);
